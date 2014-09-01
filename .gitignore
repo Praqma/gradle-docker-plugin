@@ -1,0 +1,9 @@
+.classpath
+.project
+.gradletasknamecache
+gradle.properties
+.gradle
+buildSrc/.groovy
+org.eclipse.jdt.core.prefs
+buildSrc/.settings
+buildSrc/bin

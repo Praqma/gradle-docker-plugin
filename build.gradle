@@ -1,0 +1,58 @@
+apply plugin: 'eclipse'
+apply plugin: 'docker'
+
+repositories {
+	mavenLocal()
+	mavenCentral()
+}
+
+docker {
+
+	def appPort = 8090
+	def mongoImage = 'mongo'
+	def busybox = { repository = 'busybox' }
+	// host { uri 'my docker host url' }
+
+	image('sampleapp') { directory file('src/main/resources/docker/node') }
+
+	appliance('demo') {
+
+		def appServer = container('appserver') {
+			link 'mongodb', 'db'
+			localImage = 'sampleapp'
+			port appPort, 8080
+		}
+
+		container('mongodb') {
+			image {
+				repository = 'mongo'
+				tag = '2.7.5'
+			}
+			volumesFrom 'data'
+		}
+
+		container('data') {
+			image busybox
+			volume '/data/db'
+		}
+
+		project.demoStart.doLast { println "Application running on http://${appServer.host.host}:${appPort}" }
+	}
+
+	appliance('mega') {
+		for (int n in 1..20) {
+			def appServer = container("appserver${n}") {
+				link "mongodb${n}", 'db'
+				localImage = 'sampleapp'
+				port 10000+n, 8080
+			}
+
+			container("mongodb${n}") {
+				image {
+					repository = 'mongo'
+					tag = '2.7.5'
+				}
+			}
+		}
+	}
+}
