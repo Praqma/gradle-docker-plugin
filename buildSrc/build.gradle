@@ -3,16 +3,19 @@ apply plugin: 'groovy'
 
 repositories {
 	mavenLocal()
-	mavenCentral()
+	jcenter()
 }
+
+sourceCompatibility = '1.6'
+targetCompatibility = '1.6'
 
 dependencies {
 	compile localGroovy()
 	//compile "org.codehaus.groovy:groovy-all:${GroovySystem.version}:indy"
 	compile gradleApi()
 
-	//compile 'com.github.docker-java:docker-java:0.10.1-SNAPSHOT'
-	compile 'com.github.docker-java:docker-java:0.10.0'
+	compile 'com.github.docker-java:docker-java:0.10.3'
+	//compile 'com.github.docker-java:docker-java:0.10.4-SNAPSHOT'
 }
 
 // Compile with invoke-dynamic. Needs jdk 7u60 or newer

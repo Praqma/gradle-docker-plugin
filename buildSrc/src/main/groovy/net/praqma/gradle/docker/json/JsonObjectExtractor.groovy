@@ -1,11 +1,9 @@
 package net.praqma.gradle.docker.json
 
-import java.util.Iterator;
-
 import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 
-@CompileStatic
+//@CompileStatic
 class JsonObjectExtractor implements Iterator<Object> {
 
 	private final SplittingInputStream stream;
@@ -25,6 +23,10 @@ class JsonObjectExtractor implements Iterator<Object> {
 	@Override
 	public boolean hasNext() {
 		this.stream.nextStream()
+	}
+	
+	void remove() {
+		throw new UnsupportedOperationException()
 	}
 }
 

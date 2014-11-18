@@ -12,9 +12,8 @@ import org.gradle.api.logging.Logger
 
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.model.Container
-import com.github.dockerjava.api.model.Version
+import com.github.dockerjava.core.DockerClientBuilder
 import com.github.dockerjava.core.DockerClientConfig
-import com.github.dockerjava.core.DockerClientImpl
 
 @CompileStatic
 abstract class DockerObject {
@@ -29,8 +28,10 @@ abstract class DockerObject {
 		//				.withUsername("dockeruser")
 		//				.withPassword("ilovedocker")
 		//				.withEmail("dockeruser@github.com")
+		// .withServerAddress("https://index.docker.io/v1/")
+		.withDockerCertPath(host.certPath.path)
 		.build()
-		DockerClient client = new DockerClientImpl(config)
+		DockerClient client = DockerClientBuilder.getInstance(config).build()
 		client
 	}()
 

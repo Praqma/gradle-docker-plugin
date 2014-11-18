@@ -7,6 +7,7 @@ import net.praqma.gradle.docker.jobs.ContainerJob
 
 import org.gradle.api.Project
 
+import com.github.dockerjava.api.NotModifiedException;
 import com.github.dockerjava.api.command.CreateContainerCmd
 import com.github.dockerjava.api.command.CreateContainerResponse
 import com.github.dockerjava.api.command.StartContainerCmd
@@ -121,7 +122,11 @@ class DockerContainer extends DockerDslObject {
 
 	def stop() {
 		if (containerId != null) {
-			dockerClient.stopContainerCmd(containerId).exec()
+			try {
+				dockerClient.stopContainerCmd(containerId).exec()
+			} catch (NotModifiedException e) {
+				// Container already stopped. Ignore.
+			}
 		}
 	}
 
