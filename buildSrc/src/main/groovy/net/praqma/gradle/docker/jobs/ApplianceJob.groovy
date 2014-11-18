@@ -30,6 +30,7 @@ abstract class ApplianceJob extends Job {
 		@Override
 		Answer doExecute() {
 			logInfo "started"
+			appliance.triggerStartedActions()
 			Answer.success()
 		}
 	}
@@ -45,6 +46,7 @@ abstract class ApplianceJob extends Job {
 		@Override
 		Answer doExecute() {
 			logInfo "stopped"
+			appliance.triggerStoppedActions()
 			Answer.success()
 		}
 	}

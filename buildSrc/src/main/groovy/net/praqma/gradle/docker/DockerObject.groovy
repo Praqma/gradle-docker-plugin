@@ -14,6 +14,7 @@ import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.model.Container
 import com.github.dockerjava.core.DockerClientBuilder
 import com.github.dockerjava.core.DockerClientConfig
+import com.github.dockerjava.core.DockerClientConfig.DockerClientConfigBuilder
 
 @CompileStatic
 abstract class DockerObject {
@@ -22,16 +23,9 @@ abstract class DockerObject {
 	final DockerObject parent
 
 	@Lazy DockerClient dockerClient = {
-		DockerClientConfig config = DockerClientConfig.createDefaultConfigBuilder()
-		.withVersion(host.version)
-		.withUri(host.uri as String)
-		//				.withUsername("dockeruser")
-		//				.withPassword("ilovedocker")
-		//				.withEmail("dockeruser@github.com")
-		// .withServerAddress("https://index.docker.io/v1/")
-		.withDockerCertPath(host.certPath.path)
-		.build()
-		DockerClient client = DockerClientBuilder.getInstance(config).build()
+		DockerClientConfigBuilder configBuilder = DockerClientConfig.createDefaultConfigBuilder()
+		host.addToClientConfigBuilder(configBuilder)
+		DockerClient client = DockerClientBuilder.getInstance(configBuilder.build()).build()
 		client
 	}()
 
@@ -74,7 +68,7 @@ abstract class DockerObject {
 				configBlock = arguments[-1]
 				arguments = arguments[0..-2]
 			}
-			group 'Docker'
+			group 'docker'
 			jobClass jobCls
 			args arguments
 		}

@@ -1,5 +1,7 @@
 package net.praqma.gradle.docker.json
 
+import org.apache.commons.io.IOUtils;
+
 import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 
@@ -15,7 +17,13 @@ class JsonObjectExtractor implements Iterator<Object> {
 
 	def next() {
 		if (this.stream.nextStream()) {
-			return slurper.parse(this.stream)
+			if (false) { // TODO control via flag or some other mechanism
+				byte[] bytes = IOUtils.toByteArray(stream)
+				println "STREAM " + new String(bytes)
+				return slurper.parse(new ByteArrayInputStream(bytes))
+			} else {
+				return slurper.parse(this.stream)
+			}
 		}
 		throw new NoSuchElementException()
 	}
@@ -24,7 +32,7 @@ class JsonObjectExtractor implements Iterator<Object> {
 	public boolean hasNext() {
 		this.stream.nextStream()
 	}
-	
+
 	void remove() {
 		throw new UnsupportedOperationException()
 	}

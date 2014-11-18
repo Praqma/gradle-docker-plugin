@@ -4,7 +4,7 @@ import net.praqma.gradle.docker.jobs.ApplianceJob
 import net.praqma.gradle.docker.tasks.ApplianceInfoTask;
 
 
-class DockerAppliance extends DockerDslObject {
+class DockerAppliance extends DockerDslObject implements DockerComputingTrait {
 
 	private final NamedObjects<DockerContainer, DockerAppliance> containers
 
@@ -15,11 +15,12 @@ class DockerAppliance extends DockerDslObject {
 	}
 
 	private void createTasks() {
-		createJobTask("${name}Start", , ApplianceJob.Start, this) { description "Start Docker applicance '${name}'" }
-		createJobTask("${name}Stop", ApplianceJob.Stop, this) { description "Stop Docker applicance '${name}'" }
-		createJobTask("${name}Destroy", ApplianceJob.Destroy, this) { description "Destroy Docker applicance '${name}'" }
+		String namePrefix = "appliance${name.capitalize()}"
+		createJobTask("${namePrefix}Start", , ApplianceJob.Start, this) { description "Start Docker applicance '${name}'" }
+		createJobTask("${namePrefix}Stop", ApplianceJob.Stop, this) { description "Stop Docker applicance '${name}'" }
+		createJobTask("${namePrefix}Destroy", ApplianceJob.Destroy, this) { description "Destroy Docker applicance '${name}'" }
 
-		project.tasks.create(name: "${name}Info", type: ApplianceInfoTask) {
+		project.tasks.create(name: "${namePrefix}Info", type: ApplianceInfoTask) {
 			group 'Docker'
 			description "Info about the appliance"
 			appliance owner
@@ -35,4 +36,5 @@ class DockerAppliance extends DockerDslObject {
 		containers.postProcess()
 		super.postProcess()
 	}
+	
 }

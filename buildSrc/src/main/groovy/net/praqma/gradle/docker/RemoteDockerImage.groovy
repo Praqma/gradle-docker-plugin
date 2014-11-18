@@ -20,7 +20,6 @@ class RemoteDockerImage extends DockerObject {
 		def desc = "Pulling Docker repository ${repository}:${tag}"
 		logger.warn desc
 		InputStream stream = dockerClient.pullImageCmd(repository).withTag(tag).exec() as InputStream
-		//IOUtils.copy(stream, System.out)
 		def lastStatus
 		ProgressReporter.evaluate(project, desc) { ProgressReporter reporter ->
 			new JsonObjectExtractor(stream).each { Map m ->

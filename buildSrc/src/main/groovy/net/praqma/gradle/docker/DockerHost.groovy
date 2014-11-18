@@ -2,6 +2,11 @@ package net.praqma.gradle.docker
 
 import groovy.transform.CompileStatic
 
+import com.github.dockerjava.api.DockerClient
+import com.github.dockerjava.core.DockerClientBuilder
+import com.github.dockerjava.core.DockerClientConfig
+import com.github.dockerjava.core.DockerClientConfig.DockerClientConfigBuilder
+
 @CompileStatic
 class DockerHost {
 	private URI uri
@@ -35,9 +40,27 @@ class DockerHost {
 		}
 		this.uri
 	}
-	
+
 	File getCertPath() {
 		// TODO
 		new File("/Users/jan/.boot2docker/certs/boot2docker-vm")
+	}
+
+	void addToClientConfigBuilder(DockerClientConfigBuilder configBuilder) {
+		configBuilder
+				.withVersion(version)
+				.withUri(getUri() as String)
+				//				.withUsername("dockeruser")
+				//				.withPassword("ilovedocker")
+				//				.withEmail("dockeruser@github.com")
+				// .withServerAddress("https://index.docker.io/v1/")
+				.withDockerCertPath(certPath.path)
+		configBuilder
+	}
+
+	DockerClient createClient() {
+		DockerClientConfigBuilder configBuilder = DockerClientConfig.createDefaultConfigBuilder()
+		addToClientConfigBuilder(configBuilder)
+		DockerClientBuilder.getInstance(configBuilder.build()).build()
 	}
 }

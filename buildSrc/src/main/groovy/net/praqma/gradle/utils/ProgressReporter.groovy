@@ -23,6 +23,7 @@ class ProgressReporter {
 	}
 
 	void update(msg) {
+		println "JHS ${msg}" 
 		def s = format(msg)
 		progressLogger.progress(s)
 	}
@@ -30,9 +31,9 @@ class ProgressReporter {
 	@CompileStatic(TypeCheckingMode.SKIP)
 	private static String format(message) {
 		if (message instanceof Closure) {
-			return message()
+			message = message()
 		}
-		message as String
+		((message as String)?:"").replace("\n", " ")
 	}
 
 	@CompileStatic(TypeCheckingMode.SKIP)

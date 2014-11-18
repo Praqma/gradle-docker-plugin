@@ -8,6 +8,7 @@ repositories {
 
 docker {
 
+	def dataDir = "/Users/jan/tmp/data"
 	def appPort = 8090
 	def mongoImage = 'mongo'
 	def busybox = { repository = 'busybox' }
@@ -33,12 +34,14 @@ docker {
 
 		container('data') {
 			image busybox
-			volume '/data/db'
+			volume "${dataDir}/db"
 		}
 
-		project.demoStart.doLast { println "Application running on http://${appServer.host.host}:${appPort}" }
+		whenStarted { println "Application running on http://${appServer.host.host}:${appPort}" }
+		whenStopped { println "Demo stopped" }
 	}
 
+	/*
 	appliance('mega') {
 		for (int n in 1..20) {
 			def appServer = container("appserver${n}") {
@@ -55,4 +58,5 @@ docker {
 			}
 		}
 	}
+	*/
 }
