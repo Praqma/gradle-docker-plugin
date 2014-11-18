@@ -7,3 +7,4 @@ buildSrc/.groovy
 org.eclipse.jdt.core.prefs
 buildSrc/.settings
 buildSrc/bin
+buildSrc/build
