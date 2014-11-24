@@ -39,10 +39,10 @@ ENV PATH $PATH:/usr/local/mysql/bin:/usr/local/mysql/scripts
 WORKDIR /usr/local/mysql
 EXPOSE 3306
 
-RUN mkdir /var/lib/mysql && mkdir /initdb
 RUN mysql_install_db --user=mysql --datadir=/var/lib/mysql
 
-ADD initdb.* /initdb/
+COPY initdb.sh /initdb/
+COPY initdb.sql /initdb/
 
 RUN sh /initdb/initdb.sh
 
