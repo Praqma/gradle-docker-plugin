@@ -3,6 +3,7 @@ package net.praqma.gradle.docker
 import groovy.transform.CompileStatic
 import groovy.transform.CompileDynamic
 import groovy.transform.Immutable
+import groovy.transform.ToString
 import groovy.transform.TypeCheckingMode
 import net.praqma.gradle.docker.jobs.ContainerJob
 
@@ -25,6 +26,7 @@ class DockerContainer extends DockerDslObject implements DockerComputeTrait {
 	private Collection<String> volumes = [] as Set
 	private Collection<String> volumesFrom = [] as Set
 	private Collection<LinkInfo> links = [] as Set
+	private Map<String, String> env = [:]
 
 	final private RemoteDockerImage image
 	String localImage
@@ -34,12 +36,12 @@ class DockerContainer extends DockerDslObject implements DockerComputeTrait {
 	DockerContainer(String name, DockerAppliance appliance) {
 		super(name, appliance)
 		this.image = new RemoteDockerImage(this)
-		prepareTask = project.tasks.create(name: taskName('Prefix'))
+		prepareTask = project.tasks.create(name: taskName('Prepare'))
 		appliance.prepareTask.dependsOn prepareTask
 	}
 
 	String taskName(String task) {
-		"container${fullName}"
+		"container${fullName}${task.capitalize()}"
 	}
 
 	void setLocalImage(String liName) {
@@ -59,6 +61,10 @@ class DockerContainer extends DockerDslObject implements DockerComputeTrait {
 		calculateFullName(name)
 	}
 
+	void env(Map<String,String> m) {
+		this.env.putAll(m)
+	}
+	
 	void volume(String volume) {
 		this.volumes << volume
 	}
@@ -89,6 +95,7 @@ class DockerContainer extends DockerDslObject implements DockerComputeTrait {
 			CreateContainerCmd cmd = dockerClient.createContainerCmd(imageId)
 					.withName(fullName)
 					.withVolumes(volumes.collect { new Volume(it as String) } as Volume[])
+					.withEnv(map2StringArray(env))
 			CreateContainerResponse resp = cmd.exec()
 			assert resp.id != null
 			if (resp.warnings) {
@@ -162,12 +169,22 @@ class DockerContainer extends DockerDslObject implements DockerComputeTrait {
 	@CompileStatic(TypeCheckingMode.SKIP)
 	private void createTasks() {
 		createJobTask(taskName('Start'), ContainerJob.Start, this) { dependsOn prepareTask }
-		createJobTask(taskName('Stor'), ContainerJob.Stop, this)
+		createJobTask(taskName('Stop'), ContainerJob.Stop, this)
 		createJobTask(taskName('Kill'), ContainerJob.Kill, this)
 		createJobTask(taskName('Remove'), ContainerJob.Remove, this)
 		createJobTask(taskName('Create'), ContainerJob.Create, this) { dependsOn prepareTask }
 	}
 
+	@CompileStatic(TypeCheckingMode.SKIP)
+	private String[] map2StringArray(Map<String,String> m) {
+		List<String> list = m.collect { String key, String value -> "$key=$value" as String }
+		list.toArray(new String[list.size()])
+	}
+	
+	@Override
+	String toString() {
+		"Container(${fullName})"
+	}
 }
 
 

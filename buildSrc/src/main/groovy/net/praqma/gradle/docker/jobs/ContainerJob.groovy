@@ -94,7 +94,7 @@ abstract class ContainerJob extends Job {
 		@Override
 		public Answer doExecute() {
 			if (container.containerId == null) {
-				'asked to kill, but no underlying container'
+				logInfo 'asked to kill, but no underlying container'
 			} else {
 				logInfo "killing, id: ${container.containerId}"
 				container.kill()
@@ -109,7 +109,7 @@ abstract class ContainerJob extends Job {
 		@Override
 		public Answer doExecute() {
 			if (container.containerId == null) {
-				'asked to remove, but no underlying container'
+				logInfo 'asked to remove, but no underlying container'
 			} else {
 				logInfo "removing, id: ${container.containerId}"
 				container.remove()

@@ -2,6 +2,8 @@ package net.praqma.gradle.docker
 
 import groovy.transform.CompileStatic
 
+import org.gradle.api.GradleException
+
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.core.DockerClientBuilder
 import com.github.dockerjava.core.DockerClientConfig
@@ -47,6 +49,10 @@ class DockerHost {
 	}
 
 	void addToClientConfigBuilder(DockerClientConfigBuilder configBuilder) {
+		String uri = getUri() as String
+		if (uri == null) {
+			throw new GradleException("URI for docker host is null")
+		}
 		configBuilder
 				.withVersion(version)
 				.withUri(getUri() as String)

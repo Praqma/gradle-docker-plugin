@@ -12,7 +12,7 @@ abstract class Job extends ForkJoinTask<Object> {
 	JobScheduler factory
 	ExecutionContext execCtx
 	final AtomicBoolean forked = new AtomicBoolean()
-	final Collection<Job> preJobs = Collections.newSetFromMap(new ConcurrentHashMap())
+	synchronized final Collection<Job> preJobs = Collections.newSetFromMap(new ConcurrentHashMap())
 
 	def rawResult
 

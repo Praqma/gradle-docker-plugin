@@ -11,6 +11,7 @@ class JobScheduler {
 
 	private ForkJoinPool pool = new ForkJoinPool(25)
 	private Map<List, Job> cache = [:]
+	private Collection<Job> pendingSubmits = []
 
 	static void execute(Class<? extends Job> jobClass, Object...args) {
 		def scheduler = new JobScheduler()
@@ -34,7 +35,11 @@ class JobScheduler {
 	}
 
 	void submit(Job job) {
-		pool.submit(job)
+		if (pendingSubmits == null) {
+			pool.submit(job)
+		} else {
+			pendingSubmits << job
+		}
 	}
 
 	void submitDelayed(Job job, int delayMs) {
@@ -58,6 +63,8 @@ class JobScheduler {
 	}
 
 	void launch(Job theJob) {
+		pendingSubmits.each { pool.submit(it) }
+		pendingSubmits = null // new submits are submitted immediately
 		pool.invoke(theJob)
 	}
 

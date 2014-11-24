@@ -10,6 +10,7 @@ class DockerPlugin implements Plugin<Project> {
 
 	@Override
 	public void apply(Project project) {
+		project.apply(plugin: 'base')
 		project.extensions.create('docker', DockerPluginExtension, project)
 		
 		project.task("cleanDockerHost", type: CleanHost) {

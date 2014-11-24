@@ -1,11 +1,13 @@
 package net.praqma.gradle.docker
 
+import groovy.transform.ToString;
 import net.praqma.gradle.docker.jobs.ApplianceJob
 import net.praqma.gradle.docker.tasks.ApplianceInfoTask
 
 import org.gradle.api.Task
 
 
+@ToString(includes = 'name')
 class DockerAppliance extends DockerDslObject implements DockerComputeTrait {
 
 	private final NamedObjects<DockerContainer, DockerAppliance> containers
@@ -44,4 +46,10 @@ class DockerAppliance extends DockerDslObject implements DockerComputeTrait {
 		containers.postProcess()
 		super.postProcess()
 	}
+	@Override
+	String toString() {
+		"Appliance(${name})"
+	}
+
+	
 }
