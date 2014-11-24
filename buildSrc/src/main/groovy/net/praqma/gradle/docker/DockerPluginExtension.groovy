@@ -1,16 +1,20 @@
 package net.praqma.gradle.docker
 
+import groovy.transform.CompileStatic
+import groovy.transform.CompileDynamic
+
 import org.gradle.api.Project
 
 import com.github.dockerjava.api.model.Container
 
-//@CompileStatic
+@CompileStatic
 class DockerPluginExtension extends DockerDslObject {
 
 	final Project project
 	private final NamedObjects<DockerAppliance, DockerPluginExtension> appliances
 	private final NamedObjects<LocalDockerImage, DockerPluginExtension> images
 
+	@CompileDynamic
 	DockerPluginExtension(Project project) {
 		super("___${getClass().name}___", null)
 		this.project = project
@@ -31,11 +35,11 @@ class DockerPluginExtension extends DockerDslObject {
 	}
 
 	DockerAppliance appliance(String name, Closure configBlock = null) {
-		appliances.get(name, configBlock)
+		appliances.getObject(name, configBlock)
 	}
 
 	LocalDockerImage image(String name, Closure configBlock = null) {
-		images.get(name, configBlock)
+		images.getObject(name, configBlock)
 	}
 
 	void assignAllContanerIds() {

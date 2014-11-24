@@ -3,7 +3,7 @@ apply plugin: 'docker'
 
 repositories {
 	mavenLocal()
-	mavenCentral()
+	jcenter()
 }
 
 docker {
@@ -14,7 +14,7 @@ docker {
 	def busybox = { repository = 'busybox' }
 	// host { uri 'my docker host url' }
 
-	image('sampleapp') { directory file('src/main/resources/docker/node') }
+	image('sampleapp') { from file('src/main/resources/docker/node') }
 
 	appliance('demo') {
 

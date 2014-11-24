@@ -1,13 +1,14 @@
 package net.praqma.gradle.docker
 
 import groovy.transform.CompileStatic
+import groovy.transform.CompileDynamic
 import groovy.transform.Immutable
 import groovy.transform.TypeCheckingMode
 import net.praqma.gradle.docker.jobs.ContainerJob
 
 import org.gradle.api.Project
 
-import com.github.dockerjava.api.NotModifiedException;
+import com.github.dockerjava.api.NotModifiedException
 import com.github.dockerjava.api.command.CreateContainerCmd
 import com.github.dockerjava.api.command.CreateContainerResponse
 import com.github.dockerjava.api.command.StartContainerCmd
@@ -18,9 +19,8 @@ import com.github.dockerjava.api.model.Volume
 
 
 @CompileStatic
-class DockerContainer extends DockerDslObject {
+class DockerContainer extends DockerDslObject implements DockerComputeTrait {
 
-	private String containerId
 	private Collection<DockerPortBinding> portBindings = [] as Set
 	private Collection<String> volumes = [] as Set
 	private Collection<String> volumesFrom = [] as Set
@@ -29,11 +29,22 @@ class DockerContainer extends DockerDslObject {
 	final private RemoteDockerImage image
 	String localImage
 
-	@CompileStatic(TypeCheckingMode.SKIP)
+	private String containerId
+	@CompileDynamic
 	DockerContainer(String name, DockerAppliance appliance) {
 		super(name, appliance)
 		this.image = new RemoteDockerImage(this)
-		createTasks()
+		prepareTask = project.tasks.create(name: taskName('Prefix'))
+		appliance.prepareTask.dependsOn prepareTask
+	}
+
+	String taskName(String task) {
+		"container${fullName}"
+	}
+
+	void setLocalImage(String liName) {
+		this.@localImage = liName
+		prepareTask.dependsOn LocalDockerImage.copyTaskName(liName)
 	}
 
 	DockerAppliance getAppliance() {
@@ -103,7 +114,12 @@ class DockerContainer extends DockerDslObject {
 		if (this.volumesFrom.size() > 0) {
 			cmd.withVolumesFrom(calculateFullName(volumesFrom.first()))
 		}
-		cmd.exec()
+		try {
+			cmd.exec()
+		} catch (NotModifiedException e) {
+			// container already started
+			// TODO make sure it is configured as desired
+		}
 	}
 
 	def kill() {
@@ -145,11 +161,11 @@ class DockerContainer extends DockerDslObject {
 
 	@CompileStatic(TypeCheckingMode.SKIP)
 	private void createTasks() {
-		createJobTask("dockerContainerStart_${fullName}" as String, ContainerJob.Start, this)
-		createJobTask("dockerContainerStop_${fullName}" as String, ContainerJob.Stop, this)
-		createJobTask("dockerContainerKill_${fullName}" as String, ContainerJob.Kill, this)
-		createJobTask("dockerContainerRemove_${fullName}" as String, ContainerJob.Remove, this)
-		createJobTask("dockerContainerCreate_${fullName}" as String, ContainerJob.Create, this)
+		createJobTask(taskName('Start'), ContainerJob.Start, this) { dependsOn prepareTask }
+		createJobTask(taskName('Stor'), ContainerJob.Stop, this)
+		createJobTask(taskName('Kill'), ContainerJob.Kill, this)
+		createJobTask(taskName('Remove'), ContainerJob.Remove, this)
+		createJobTask(taskName('Create'), ContainerJob.Create, this) { dependsOn prepareTask }
 	}
 
 }

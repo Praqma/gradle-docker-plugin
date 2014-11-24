@@ -20,6 +20,6 @@ class BuildImageJob extends Job {
 
 	@Override
 	public Object logPrefix() {
-		this.image
+		"Image '${this.image.name}'"
 	}
 }

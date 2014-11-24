@@ -5,7 +5,7 @@ import org.apache.commons.io.IOUtils;
 import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 
-//@CompileStatic
+@CompileStatic
 class JsonObjectExtractor implements Iterator<Object> {
 
 	private final SplittingInputStream stream;

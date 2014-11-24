@@ -1,7 +1,15 @@
 package net.praqma.gradle.docker
 
+import org.gradle.api.Task
 
-trait DockerComputingTrait {
+
+
+/**
+ * Something that has compute resources.
+ */
+trait DockerComputeTrait {
+
+	Task prepareTask
 
 	private final List startedActions = []
 	private final List stoppedActions = []
@@ -13,16 +21,16 @@ trait DockerComputingTrait {
 	void whenStopped(action) {
 		stoppedActions << action
 	}
-	
+
 	void triggerStartedActions() {
 		trigger(startedActions)
 	}
-	
+
 	void triggerStoppedActions() {
 		trigger(stoppedActions)
 	}
-	
-	private void trigger(List actions) {
+
+	void trigger(List actions) {
 		actions.each { it() }
 	}
 }

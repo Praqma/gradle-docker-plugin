@@ -23,7 +23,6 @@ class ProgressReporter {
 	}
 
 	void update(msg) {
-		println "JHS ${msg}" 
 		def s = format(msg)
 		progressLogger.progress(s)
 	}
