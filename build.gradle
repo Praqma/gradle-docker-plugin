@@ -1,91 +1,48 @@
+plugins { id 'com.jfrog.bintray' version '0.6' }
+
 apply plugin: 'eclipse'
-apply plugin: 'docker'
+apply plugin: 'groovy'
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
 
-repositories {
-	mavenLocal()
-	jcenter()
+repositories { jcenter() }
+
+targetCompatibility = sourceCompatibility = '1.6'
+
+group = 'net.praqma.gradle'
+version = '0.1'
+description = 'Gradle plugin to orchestrate Docker containers'
+
+ext {
+	pluginId = 'net.praqma.docker'
+	artifact = 'gradle-docker-plugin'
 }
 
-docker {
+dependencies {
+	compile localGroovy()
+	compile gradleApi()
 
-	image('mysql') {  from 'src/main/docker/mysql' }
+	compile 'com.github.docker-java:docker-java:0.10.3'
+	//compile 'com.github.docker-java:docker-java:0.10.4-SNAPSHOT'
+}
 
-	image('webserver') {
-		from 'src/main/docker/webserver'
-		from({ project(':StudentEnrollmentWithSpring').war }) { rename { 'student.war'} }
-	}
+task sourceJar(type: Jar) {
+	classifier 'sources'
+	from sourceSets.main.allSource
+}
 
-	appliance('student') {
-		def deployDir = "/Users/jan/tmp/webapps"
+publishing {
+	publications {
+		mavenJava(MavenPublication) {
+			artifactId artifact
 
-		task deployWar(type: Copy) { into deployDir }
+			from components.java
+			artifact sourceJar
 
-		container('mysql') {
-			localImage = 'mysql'
-			createTasks()
-		}
-
-		container('studentApp') {
-			localImage = 'webserver'
-			env TOMCAT_PASS: 'password'
-			port 8080, 8080
-			link 'mysql', 'dbserver'
-		}
-	}
-
-	def dataDir = "/Users/jan/tmp/data"
-	def appPort = 8090
-	def mongoImage = 'mongo'
-	def busybox = { repository = 'busybox' }
-
-	image('sampleapp') { from 'src/main/docker/node' }
-
-	appliance('demo') {
-
-		def appServer = container('appserver') {
-			link 'mongodb', 'db'
-			localImage = 'sampleapp'
-			port appPort, 8080
-		}
-
-		container('mongodb') {
-			image {
-				repository = 'mongo'
-				tag = '2.7.5'
+			pom.withXml {
+				asNode().appendNode('description', project.description)
 			}
-			volumesFrom 'data'
 		}
-
-		container('data') {
-			image busybox
-			volume "${dataDir}/db"
-		}
-
-		whenStarted { println "Application running on http://${appServer.host.host}:${appPort}" }
-		whenStopped { println "Demo stopped" }
 	}
-
-	/*
-	 appliance('mega') {
-	 for (int n in 1..20) {
-	 def appServer = container("appserver${n}") {
-	 link "mongodb${n}", 'db'
-	 localImage = 'sampleapp'
-	 port 10000+n, 8080
-	 }
-	 container("mongodb${n}") {
-	 image {
-	 repository = 'mongo'
-	 tag = '2.7.5'
-	 }
-	 }
-	 }
-	 }
-	 */
 }
 
-task systemTest {
-	dependsOn applianceStudentStart
-	finalizedBy applianceStudentDestroy
-	
-}

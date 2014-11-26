@@ -9,3 +9,4 @@ buildSrc/.settings
 buildSrc/bin
 buildSrc/build
 /build/
+/bin/
