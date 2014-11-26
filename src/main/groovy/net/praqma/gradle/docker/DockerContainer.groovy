@@ -41,7 +41,7 @@ class DockerContainer extends DockerDslObject implements DockerComputeTrait {
 	}
 
 	String taskName(String task) {
-		"container${fullName}${task.capitalize()}"
+		"container${fullName.capitalize()}${task.capitalize()}"
 	}
 
 	void setLocalImage(String liName) {

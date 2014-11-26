@@ -16,6 +16,7 @@ description = 'Gradle plugin to orchestrate Docker containers'
 ext {
 	pluginId = 'net.praqma.docker'
 	artifact = 'gradle-docker-plugin'
+	github = 'https://github.com/Praqma/gradle-custom-dist-plugin'
 }
 
 dependencies {
@@ -33,7 +34,7 @@ task sourceJar(type: Jar) {
 
 publishing {
 	publications {
-		mavenJava(MavenPublication) {
+		plugin(MavenPublication) {
 			artifactId artifact
 
 			from components.java
@@ -42,6 +43,30 @@ publishing {
 			pom.withXml {
 				asNode().appendNode('description', project.description)
 			}
+		}
+	}
+}
+
+bintray {
+	// E.g. defined in gradle.properties
+	user = project.bintrayUser
+	key = project.bintrayApiKey
+
+	publications = ['plugin']
+	dryRun = false //Whether to run this as dry-run, without deploying
+	publish = true //If version should be auto published after an upload
+	pkg {
+		repo = 'gradle-plugins'
+		userOrg = 'praqma'
+		name = artifact
+		desc = project.description
+		websiteUrl = github
+		vcsUrl = "${project.github}.git"
+		licenses = ['Apache-2.0']
+		publicDownloadNumbers = true
+		//Optional version descriptor
+		version {
+			attributes = ['gradle-plugin': "${pluginId}:${group}:${artifact}"]
 		}
 	}
 }
