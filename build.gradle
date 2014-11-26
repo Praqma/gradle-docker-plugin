@@ -10,7 +10,7 @@ repositories { jcenter() }
 targetCompatibility = sourceCompatibility = '1.6'
 
 group = 'net.praqma.gradle'
-version = '0.1'
+version = '0.2'
 description = 'Gradle plugin to orchestrate Docker containers'
 
 ext {
