@@ -19,6 +19,7 @@ class DockerContainerTest extends ProjectTestCase {
 		project.with {
 			docker{
 				container (conName) {
+					persistent = true
 					image "busybox:latest"
 					cmd 'sleep', '1000000'
 				}

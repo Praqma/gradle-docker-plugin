@@ -40,11 +40,6 @@ class NamedObjects<T extends NamedObjectsElement> {
 		return null != this.objects[name]
 	}
 
-	void postProcess() {
-		objects.values().each { T t -> t.postProcess() }
-		this.frozen = true
-	}
-
 	@CompileDynamic
 	void each(@DelegatesTo(T) Closure closure) {
 		new ArrayList(objects.values()).each(closure)
@@ -53,6 +48,5 @@ class NamedObjects<T extends NamedObjectsElement> {
 
 trait NamedObjectsElement {
 	abstract String getName()
-	void postProcess() {}
 }
 

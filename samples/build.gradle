@@ -19,6 +19,7 @@ docker {
 	image('sampleapp') { from 'src/main/docker/node' }
 
 	appliance('demo') {
+                withTasks = true          
 
 		def appServer = container('appserver') {
 			link 'mongodb', 'db'

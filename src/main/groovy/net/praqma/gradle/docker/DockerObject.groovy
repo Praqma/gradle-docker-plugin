@@ -85,9 +85,6 @@ abstract class DockerObject {
 		project.logger
 	}
 
-	protected void postProcess() {
-	}
-
 	ContainerInfo findContainerByName(String fullName) {
 		Collection<Container> containerList = dockerClient.listContainersCmd().withShowAll(true).exec() as Collection<Container>
 		Container c = containerList.find { Container c ->

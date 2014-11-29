@@ -30,13 +30,13 @@ trait CompositeCompute {
 		computes.each closure
 	}
 
-	void eachContainerDeep(@DelegatesTo(DockerContainer) Closure closure) {
+	void traverse(Class<?> cls, Closure closure) {
 		eachCompute { m ->
-			if (m instanceof DockerContainer) {
+			if (cls.isInstance(m)) {
 				closure(m)
 			}
 			if (m instanceof CompositeCompute) {
-				m.eachContainerDeep closure
+				m.traverse(cls, closure)
 			}
 		}
 	}

@@ -51,6 +51,7 @@ abstract class ContainerJob extends Job {
 			logInfo 'stopped'
 			if (!container.persistent) {
 				container.remove()
+				logInfo 'removed'
 			}
 			Answer.success()
 		}

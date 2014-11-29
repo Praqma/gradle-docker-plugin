@@ -7,17 +7,14 @@ import net.praqma.gradle.docker.tasks.ApplianceInfoTask
 
 import org.gradle.api.Task
 
-
-@ToString(includes = 'name')
 class DockerAppliance extends DockerCompute implements CompositeCompute {
 
 	DockerAppliance(String name, DockerPluginExtension extension) {
 		super(name, extension)
 		initCompositeCompute(this)
-		createTasks()
 	}
 
-	private void createTasks() {
+	protected void createTasks() {
 		String namePrefix = "appliance${name.capitalize()}"
 
 		project.tasks.with {
@@ -36,12 +33,6 @@ class DockerAppliance extends DockerCompute implements CompositeCompute {
 		createJobTask("${namePrefix}Destroy", ApplianceJob.Destroy, this) { description "Destroy Docker applicance '${name}'" }
 	}
 
-	@Override
-	void postProcess() {
-		containers.postProcess()
-		super.postProcess()
-	}
-	
 	@Override
 	String toString() {
 		"Appliance(${name})"

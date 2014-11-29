@@ -50,7 +50,7 @@ class DockerPluginExtension extends DockerDslObject implements CompositeCompute 
 				name2id[n.substring(1)] = c.id
 			}
 		}
-		eachContainerDeep {  DockerContainer c ->
+		traverse(DockerContainer) {  DockerContainer c ->
 			String id = name2id[c.fullName]
 			if (id != null) {
 				c.containerId = id
@@ -58,11 +58,9 @@ class DockerPluginExtension extends DockerDslObject implements CompositeCompute 
 		}
 	}
 
-	@Override
 	void postProcess() {
-		super.postProcess()
-		images.postProcess()
-		eachCompute { DockerCompute c -> c.postProcess() }
+		//images.each { LocalDockerImage img -> img.postProcess() }
+		traverse(DockerCompute) { DockerCompute c -> c.postProcess() }
 	}
 
 }

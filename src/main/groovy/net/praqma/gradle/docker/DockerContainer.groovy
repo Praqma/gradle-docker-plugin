@@ -199,7 +199,7 @@ class DockerContainer extends DockerCompute {
 	}
 
 	@CompileStatic(TypeCheckingMode.SKIP)
-	private void createTasks() {
+	protected void createTasks() {
 		createJobTask(taskName('Start'), ContainerJob.Start, this) { dependsOn prepareTask }
 		createJobTask(taskName('Stop'), ContainerJob.Stop, this)
 		createJobTask(taskName('Kill'), ContainerJob.Kill, this)

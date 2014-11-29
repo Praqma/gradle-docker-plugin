@@ -13,6 +13,7 @@ import org.gradle.api.Task
 abstract class DockerCompute extends DockerDslObject {
 
 	Task prepareTask
+	boolean withTasks = false
 
 	private final List startedActions = []
 	private final List stoppedActions = []
@@ -21,7 +22,7 @@ abstract class DockerCompute extends DockerDslObject {
 		super(name, parent)
 		assert parent != null
 	}
-	
+
 	void whenStarted(action) {
 		startedActions << action
 	}
@@ -41,5 +42,12 @@ abstract class DockerCompute extends DockerDslObject {
 	void trigger(List actions) {
 		actions.each { it() }
 	}
-	
+
+	protected void postProcess() {
+		if (withTasks) {
+			createTasks()
+		}
+	}
+
+	protected void createTasks() {}
 }
