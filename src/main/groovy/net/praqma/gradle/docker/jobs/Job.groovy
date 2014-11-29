@@ -26,6 +26,7 @@ abstract class Job extends ForkJoinTask<Object> {
 
 	protected boolean exec() {
 		this.preJobs.each { Job j ->
+			assert j != null
 			j.join()
 		}
 		Answer answer = doExecute()

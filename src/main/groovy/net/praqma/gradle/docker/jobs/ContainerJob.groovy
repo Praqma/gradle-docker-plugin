@@ -17,7 +17,7 @@ abstract class ContainerJob extends Job {
 
 	@Override
 	def logPrefix() {
-		"Container '${container.name}' in '${container.appliance.name}'"
+		"Container '${container.name}' in '${container.owner.name}'"
 	}
 
 	static class Start extends ContainerJob {
@@ -27,7 +27,7 @@ abstract class ContainerJob extends Job {
 			super.init(container)
 			preJob(Create, container)
 			container.links.each { LinkInfo li ->
-				DockerContainer linkContainer = container.appliance.container(li.name)
+				DockerContainer linkContainer = container.owner.container(li.name)
 				preJob(Start, linkContainer)
 			}
 		}
@@ -49,6 +49,9 @@ abstract class ContainerJob extends Job {
 			logInfo 'stopping'
 			container.stop()
 			logInfo 'stopped'
+			if (!container.persistent) {
+				container.remove()
+			}
 			Answer.success()
 		}
 	}
@@ -73,7 +76,7 @@ abstract class ContainerJob extends Job {
 					getImageIdJob = preJob(PullImageJob, container.image)
 				}
 				container.volumesFrom.each { String volumeFrom ->
-					DockerContainer volumeFromContainer = container.appliance.container(volumeFrom)
+					DockerContainer volumeFromContainer = container.owner.container(volumeFrom)
 					preJob(Create, volumeFromContainer)
 				}
 			}

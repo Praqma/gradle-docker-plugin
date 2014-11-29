@@ -8,38 +8,37 @@ import org.gradle.api.Project
 import com.github.dockerjava.api.model.Container
 
 @CompileStatic
-class DockerPluginExtension extends DockerDslObject {
+class DockerPluginExtension extends DockerDslObject implements CompositeCompute {
 
 	final Project project
-	private final NamedObjects<DockerAppliance, DockerPluginExtension> appliances
-	private final NamedObjects<LocalDockerImage, DockerPluginExtension> images
+	private final NamedObjects<LocalDockerImage> images
 
 	@CompileDynamic
 	DockerPluginExtension(Project project) {
-		super("___${getClass().name}___", null)
+		super("DockerPluginExtension", null)
 		this.project = project
-		this.appliances = new NamedObjects<>(this, DockerAppliance)
-		this.images = new NamedObjects<>(this, LocalDockerImage)
+		initCompositeCompute(this)
+		this.images = new NamedObjects<>(this)
 		host { } // host.uri is lazy initialized to a meaningful value
 		getHost()
-		project.afterEvaluate { this.postProcess() }
+		project.afterEvaluate { postProcess() }
 		project.tasks.create(name: 'dockerVersion', group: 'Docker') {
 			description 'Display version information about the Docker host'
 			doLast {
 				def m = dockerVersion()
-				['apiVersion', 'version', 'kernelVersion', 'goVersion', 'gitCommit'].each { String key ->
-					println "${key} = ${m[key]}"
-				}
+				[
+					'apiVersion',
+					'version',
+					'kernelVersion',
+					'goVersion',
+					'gitCommit'
+				].each { String key -> println "${key} = ${m[key]}" }
 			}
 		}
 	}
 
-	DockerAppliance appliance(String name, Closure configBlock = null) {
-		appliances.getObject(name, configBlock)
-	}
-
 	LocalDockerImage image(String name, Closure configBlock = null) {
-		images.getObject(name, configBlock)
+		images.getObject(name, LocalDockerImage, configBlock)
 	}
 
 	void assignAllContanerIds() {
@@ -51,22 +50,19 @@ class DockerPluginExtension extends DockerDslObject {
 				name2id[n.substring(1)] = c.id
 			}
 		}
-		this.appliances.each { DockerAppliance a ->
-			a.containers.each { DockerContainer c ->
-				String id = name2id[c.fullName]
-				if (id != null) {
-					c.containerId = id
-				}
+		eachContainerDeep {  DockerContainer c ->
+			String id = name2id[c.fullName]
+			if (id != null) {
+				c.containerId = id
 			}
 		}
-
 	}
 
 	@Override
 	void postProcess() {
 		super.postProcess()
 		images.postProcess()
-		appliances.postProcess()
+		eachCompute { DockerCompute c -> c.postProcess() }
 	}
 
 }

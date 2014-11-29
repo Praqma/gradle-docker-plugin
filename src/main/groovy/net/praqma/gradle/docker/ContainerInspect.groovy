@@ -24,11 +24,11 @@ class ContainerInspect {
 		icr.volumes as List
 	}
 
-	RunState getRunState() {
+	State getState() {
 		def s = icr.state
-		if (s.paused) return RunState.PAUSED
-		if (s.running) return RunState.RUNNING
-		return RunState.STOPPED
+		if (s.paused) return State.PAUSED
+		if (s.running) return State.RUNNING
+		return State.STOPPED
 	}
 
 	@Immutable
@@ -37,6 +37,6 @@ class ContainerInspect {
 	}
 }
 
-enum RunState {
+enum State {
 	STOPPED, PAUSED, RUNNING
 }

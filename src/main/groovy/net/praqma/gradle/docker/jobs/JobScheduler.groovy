@@ -9,8 +9,8 @@ import java.util.concurrent.ForkJoinTask
 @CompileStatic
 class JobScheduler {
 
-	private ForkJoinPool pool = new ForkJoinPool(25)
-	private Map<List, Job> cache = [:]
+	private final ForkJoinPool pool = new ForkJoinPool(25)
+	private final Map<List, Job> cache = [:]
 	private Collection<Job> pendingSubmits = []
 
 	static void execute(Class<? extends Job> jobClass, Object...args) {
@@ -63,6 +63,7 @@ class JobScheduler {
 	}
 
 	void launch(Job theJob) {
+		assert theJob != null
 		pendingSubmits.each { pool.submit(it) }
 		pendingSubmits = null // new submits are submitted immediately
 		pool.invoke(theJob)

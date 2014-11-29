@@ -2,8 +2,11 @@ package net.praqma.gradle.docker.jobs
 
 import groovy.transform.CompileStatic
 import groovy.transform.TypeCheckingMode
+import net.praqma.gradle.docker.CompositeCompute;
 import net.praqma.gradle.docker.DockerAppliance
 import net.praqma.gradle.docker.DockerContainer
+
+import org.gradle.api.GradleException
 
 @CompileStatic
 abstract class ApplianceJob extends Job {
@@ -24,7 +27,7 @@ abstract class ApplianceJob extends Job {
 
 		void init(DockerAppliance appliance) {
 			super.init(appliance)
-			containerPreJobs(ContainerJob.Start)
+			nestedPreJobs(ContainerJob.Start, ApplianceJob.Start, appliance)
 		}
 
 		@Override
@@ -40,7 +43,7 @@ abstract class ApplianceJob extends Job {
 
 		void init(DockerAppliance appliance) {
 			super.init(appliance)
-			containerPreJobs(ContainerJob.Stop)
+			nestedPreJobs(ContainerJob.Stop, ApplianceJob.Stop, appliance)
 		}
 
 		@Override
@@ -71,9 +74,18 @@ abstract class ApplianceJob extends Job {
 
 
 
-	private containerPreJobs(Class<? extends ContainerJob> cls) {
-		appliance.containers.each { DockerContainer c ->
-			preJob(cls, c)
+	private nestedPreJobs(Class<? extends ContainerJob> containerJobClass, Class<? extends ApplianceJob> applianceJobClass, CompositeCompute cc) {
+		cc.eachCompute { c ->
+			switch (c) {
+				case DockerContainer:
+					preJob(containerJobClass, c)
+					break
+				case DockerAppliance:
+					preJob(applianceJobClass, c)
+					break
+				default:
+					throw new GradleException("INTERNAL ERROR: ${c}")
+			}
 		}
 	}
 }

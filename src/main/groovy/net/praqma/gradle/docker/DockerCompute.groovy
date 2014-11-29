@@ -6,14 +6,22 @@ import org.gradle.api.Task
 
 /**
  * Something that has compute resources.
+ * <p>
+ * I.e. container or appliances
+ * 
  */
-trait DockerComputeTrait {
+abstract class DockerCompute extends DockerDslObject {
 
 	Task prepareTask
 
 	private final List startedActions = []
 	private final List stoppedActions = []
 
+	DockerCompute(String name, CompositeCompute parent) {
+		super(name, parent)
+		assert parent != null
+	}
+	
 	void whenStarted(action) {
 		startedActions << action
 	}
@@ -33,4 +41,5 @@ trait DockerComputeTrait {
 	void trigger(List actions) {
 		actions.each { it() }
 	}
+	
 }

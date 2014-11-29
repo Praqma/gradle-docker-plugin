@@ -19,13 +19,18 @@ class RemoteDockerImage extends DockerObject {
 		String id
 		def desc = "Pulling Docker repository ${repository}:${tag}"
 		logger.warn desc
+		if (repository == null) {
+		assert repository != null
+		}	
 		InputStream stream = dockerClient.pullImageCmd(repository).withTag(tag).exec() as InputStream
 		def lastStatus
+		def maps = []
 		ProgressReporter.evaluate(project, desc) { ProgressReporter reporter ->
 			new JsonObjectExtractor(stream).each { Map m ->
 				if (m['id']) id = m['id']
 				String status = m['status']
 				String progress = m['progress']
+				maps << m
 				String msg
 				if (progress) {
 					msg = "${status}: ${progress}"
@@ -36,8 +41,11 @@ class RemoteDockerImage extends DockerObject {
 				if (status != null) lastStatus = status
 			}
 		}
-		if (lastStatus == 'Repository mongo already being pulled by another client. Waiting.') {
+		if (lastStatus.endsWith('already being pulled by another client. Waiting.')) {
 			return "---retry---"
+		}
+		if (id == null) {
+			maps.each { println it }
 		}
 		assert id != null
 		id

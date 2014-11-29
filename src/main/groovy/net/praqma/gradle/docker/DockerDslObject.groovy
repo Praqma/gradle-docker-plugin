@@ -4,10 +4,10 @@ import groovy.transform.CompileStatic
 
 
 @CompileStatic
-abstract class DockerDslObject extends DockerObject {
+class DockerDslObject extends DockerObject implements NamedObjectsElement {
 
 	final String name
-
+	
 	DockerDslObject(String name, DockerObject parent) {
 		super(parent)
 		this.name = name

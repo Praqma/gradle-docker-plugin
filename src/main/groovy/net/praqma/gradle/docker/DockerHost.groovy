@@ -1,6 +1,7 @@
 package net.praqma.gradle.docker
 
 import groovy.transform.CompileStatic
+import groovy.transform.ToString;
 
 import org.gradle.api.GradleException
 
@@ -10,14 +11,20 @@ import com.github.dockerjava.core.DockerClientConfig
 import com.github.dockerjava.core.DockerClientConfig.DockerClientConfigBuilder
 
 @CompileStatic
+@ToString
 class DockerHost {
 
-	private URI uri
+	private URI _uri
+	private File _certPath
 
 	String version = '1.15'
 
 	def uri(String s) {
 		uri = URI.create(s)
+	}
+	
+	def certPath(File certPath) {
+		this._certPath = certPath
 	}
 
 	def getScheme() {
@@ -33,30 +40,33 @@ class DockerHost {
 	}
 
 	URI getUri() {
-		if (this.uri == null) {
+		if (this._uri == null) {
 			String s = System.getenv('DOCKER_HOST')
 			if (s == null) return null
 			if (s.startsWith('tcp://')) {
 				s = 'https' + s[3..-1]
 			}
-			this.uri = URI.create(s)
+			this._uri = URI.create(s)
 		}
-		this.uri
+		this._uri
 	}
 
 	File getCertPath() {
-		String s = System.getenv('DOCKER_CERT_PATH')
-		return s ? new File(s) : null
+		if (this._certPath == null) {
+			String s = System.getenv('DOCKER_CERT_PATH')
+			this._certPath = s ? new File(s) : null
+		}
+		this._certPath
 	}
 
 	void addToClientConfigBuilder(DockerClientConfigBuilder configBuilder) {
-		String uri = getUri() as String
+		String uri = uri as String
 		if (uri == null) {
 			throw new GradleException("URI for docker host is null")
 		}
 		configBuilder
 				.withVersion(version)
-				.withUri(getUri() as String)
+				.withUri(uri)
 				//				.withUsername("dockeruser")
 				//				.withPassword("ilovedocker")
 				//				.withEmail("dockeruser@github.com")

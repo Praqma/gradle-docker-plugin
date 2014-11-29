@@ -1,5 +1,6 @@
 package net.praqma.gradle.docker
 
+import groovy.lang.Closure;
 import groovy.transform.CompileStatic
 import groovy.transform.CompileDynamic
 import groovy.transform.Immutable
@@ -20,7 +21,7 @@ import com.github.dockerjava.api.model.Volume
 
 
 @CompileStatic
-class DockerContainer extends DockerDslObject implements DockerComputeTrait {
+class DockerContainer extends DockerCompute {
 
 	private Collection<DockerPortBinding> portBindings = [] as Set
 	private Collection<String> volumes = [] as Set
@@ -30,14 +31,18 @@ class DockerContainer extends DockerDslObject implements DockerComputeTrait {
 
 	final private RemoteDockerImage image
 	String localImage
+	String persistent
+	String[] cmd
 
 	private String containerId
 	@CompileDynamic
-	DockerContainer(String name, DockerAppliance appliance) {
-		super(name, appliance)
+	DockerContainer(String name, CompositeCompute parent) {
+		super(name, parent)
 		this.image = new RemoteDockerImage(this)
 		prepareTask = project.tasks.create(name: taskName('Prepare'))
-		appliance.prepareTask.dependsOn prepareTask
+		if (parent.metaClass.hasProperty("prepareTask")) {
+			parent.prepareTask.dependsOn prepareTask
+		}
 	}
 
 	String taskName(String task) {
@@ -49,8 +54,8 @@ class DockerContainer extends DockerDslObject implements DockerComputeTrait {
 		prepareTask.dependsOn LocalDockerImage.copyTaskName(liName)
 	}
 
-	DockerAppliance getAppliance() {
-		parent as DockerAppliance
+	CompositeCompute getOwner() {
+		parent as CompositeCompute
 	}
 
 	void image(String image) {
@@ -70,6 +75,10 @@ class DockerContainer extends DockerDslObject implements DockerComputeTrait {
 
 	void image(Closure closure) {
 		this.image.with closure
+	}
+
+	void cmd(String...cmdArray) {
+		this.cmd = cmdArray
 	}
 
 	String getFullName() {
@@ -101,17 +110,21 @@ class DockerContainer extends DockerDslObject implements DockerComputeTrait {
 	}
 
 	Project getProject() {
-		appliance.project
+		parent.project
 	}
 
 	String create(String imageId) {
+		assert imageId != null
 		if (containerId == null) {
 			logger.info "Creating Docker container from ${imageId}"
-			CreateContainerCmd cmd = dockerClient.createContainerCmd(imageId)
+			CreateContainerCmd c = dockerClient.createContainerCmd(imageId)
 					.withName(fullName)
 					.withVolumes(volumes.collect { new Volume(it as String) } as Volume[])
 					.withEnv(map2StringArray(env))
-			CreateContainerResponse resp = cmd.exec()
+			if (cmd != null) {
+				c.withCmd(cmd)
+			}
+			CreateContainerResponse resp = c.exec()
 			assert resp.id != null
 			if (resp.warnings) {
 				resp.warnings.each { println it }
@@ -132,6 +145,7 @@ class DockerContainer extends DockerDslObject implements DockerComputeTrait {
 		StartContainerCmd cmd = dockerClient.startContainerCmd(containerId)
 				.withLinks(links.collect { LinkInfo li -> new Link(calculateFullName(li.name), li.alias) } as Link[])
 				.withPortBindings(ports)
+				.withBinds()
 		// TODO set more volumes
 		if (this.volumesFrom.size() > 0) {
 			cmd.withVolumesFrom(calculateFullName(volumesFrom.first()))
@@ -167,18 +181,21 @@ class DockerContainer extends DockerDslObject implements DockerComputeTrait {
 			}
 		}
 	}
-
+	
 	def port(int hostPort, int port = hostPort) {
 		def portBinding = new DockerPortBinding(hostPort, port)
 		portBindings << portBinding
 	}
 
 	ContainerInspect inspect() {
+		if (containerId == null) {
+			return null
+		}
 		new ContainerInspect(fullName, dockerClient.inspectContainerCmd(containerId).exec())
 	}
 
 	private String calculateFullName(String name) {
-		"${appliance.name}_${name}"
+		"${owner.name}_${name}"
 	}
 
 	@CompileStatic(TypeCheckingMode.SKIP)
@@ -194,6 +211,10 @@ class DockerContainer extends DockerDslObject implements DockerComputeTrait {
 	private String[] map2StringArray(Map<String,String> m) {
 		List<String> list = m.collect { String key, String value -> "$key=$value" as String }
 		list.toArray(new String[list.size()])
+	}
+
+	void eachContainer(@DelegatesTo(DockerContainer) Closure closure) {
+		closure(this)
 	}
 
 	@Override

@@ -1,0 +1,55 @@
+buildscript {
+	repositories {
+		mavenLocal()
+		jcenter()
+	}
+	dependencies { classpath 'net.praqma.gradle:gradle-docker-plugin:0.2' }
+}
+
+apply plugin: 'net.praqma.docker'
+
+repositories { jcenter() }
+
+docker {
+
+	def appPort = 8090
+	def mongoImage = 'mongo'
+	def mongoVersion = '2.8'
+
+	image('sampleapp') { from 'src/main/docker/node' }
+
+	appliance('demo') {
+
+		def appServer = container('appserver') {
+			link 'mongodb', 'db'
+			localImage = 'sampleapp'
+			port appPort, 8080
+		}
+
+		container('mongodb') {
+			image {
+				repository = 'mongo'
+				tag = mongoVersion
+			}
+		}
+
+		whenStarted { println "Application running on http://${appServer.host.host}:${appPort}" }
+		whenStopped { println "node.js demo stopped" }
+	}
+
+	appliance('mega') {
+		for (int n in 1..10) {
+			def appServer = container("appserver${n}") {
+				link "mongodb${n}", 'db'
+				localImage = 'sampleapp'
+				port 10000+n, 8080
+			}
+			container("mongodb${n}") {
+				image {
+					repository = 'mongo'
+					tag = mongoVersion
+				}
+			}
+		}
+	}
+}

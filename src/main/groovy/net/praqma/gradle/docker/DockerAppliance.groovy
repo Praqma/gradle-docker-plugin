@@ -1,5 +1,6 @@
 package net.praqma.gradle.docker
 
+import groovy.lang.Closure;
 import groovy.transform.ToString;
 import net.praqma.gradle.docker.jobs.ApplianceJob
 import net.praqma.gradle.docker.tasks.ApplianceInfoTask
@@ -8,13 +9,11 @@ import org.gradle.api.Task
 
 
 @ToString(includes = 'name')
-class DockerAppliance extends DockerDslObject implements DockerComputeTrait {
-
-	private final NamedObjects<DockerContainer, DockerAppliance> containers
+class DockerAppliance extends DockerCompute implements CompositeCompute {
 
 	DockerAppliance(String name, DockerPluginExtension extension) {
 		super(name, extension)
-		this.containers = new NamedObjects<>(this, DockerContainer)
+		initCompositeCompute(this)
 		createTasks()
 	}
 
@@ -37,15 +36,12 @@ class DockerAppliance extends DockerDslObject implements DockerComputeTrait {
 		createJobTask("${namePrefix}Destroy", ApplianceJob.Destroy, this) { description "Destroy Docker applicance '${name}'" }
 	}
 
-	DockerContainer container(String name, Closure configBlock = null)  {
-		this.containers.getObject(name, configBlock)
-	}
-
 	@Override
 	void postProcess() {
 		containers.postProcess()
 		super.postProcess()
 	}
+	
 	@Override
 	String toString() {
 		"Appliance(${name})"

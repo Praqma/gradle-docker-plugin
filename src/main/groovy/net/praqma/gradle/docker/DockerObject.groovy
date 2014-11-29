@@ -30,7 +30,7 @@ abstract class DockerObject {
 	}()
 
 	DockerObject(DockerObject parent) {
-		this.parent = parent
+		this.@parent = parent
 	}
 
 	DockerHost getHost() {
