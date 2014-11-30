@@ -1,9 +1,10 @@
 package net.praqma.gradle.docker
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat
 import static org.hamcrest.Matchers.*
 import net.praqma.gradle.docker.jobs.ApplianceJob
-import net.praqma.gradle.docker.jobs.ContainerJob;
+import net.praqma.gradle.docker.jobs.ContainerJob
+import net.praqma.gradle.docker.jobs.Job
 import net.praqma.gradle.docker.jobs.JobScheduler
 import net.praqma.gradle.docker.test.ProjectTestCase
 
@@ -12,6 +13,8 @@ import org.junit.Test
 
 class DockerContainerTest extends ProjectTestCase {
 
+	private static String BUSYBOX_IMAGE = 'busybox:latest'
+	
 	@Test
 	void testInspectState() {
 		String conName = newName('con')
@@ -20,7 +23,7 @@ class DockerContainerTest extends ProjectTestCase {
 			docker{
 				container (conName) {
 					persistent = true
-					image "busybox:latest"
+					image BUSYBOX_IMAGE
 					cmd 'sleep', '1000000'
 				}
 			}
@@ -30,20 +33,20 @@ class DockerContainerTest extends ProjectTestCase {
 		ContainerInspect ci = con.inspect()
 		assertThat ci, is(null)
 
-		JobScheduler.execute(ContainerJob.Create, con)
+		create con
 		ci = con.inspect()
 		assertThat ci.state, is(State.STOPPED)
 
-		JobScheduler.execute(ContainerJob.Start, con)
+		start con
 		sleep 100 // Give it a chance to stop
 		ci = con.inspect()
 		assertThat ci.state, is(State.RUNNING)
 
-		JobScheduler.execute(ContainerJob.Stop, con)
+		stop con
 		ci = con.inspect()
 		assertThat ci.state, is(State.STOPPED)
 
-		JobScheduler.execute(ContainerJob.Remove, con)
+		remove con
 		ci = con.inspect()
 		assertThat ci, is(null)
 	}
@@ -58,12 +61,12 @@ class DockerContainerTest extends ProjectTestCase {
 			docker{
 				appliance (appName) {
 					container (trueName) {
-						image "busybox:latest"
+						image BUSYBOX_IMAGE
 						cmd 'sleep', '10000'
 						persistent = true
 					}
 					container (falseName) {
-						image "busybox:latest"
+						image BUSYBOX_IMAGE
 						cmd 'sleep', '10000'
 					}
 				}
@@ -74,7 +77,7 @@ class DockerContainerTest extends ProjectTestCase {
 
 		DockerContainer t = a.container(trueName)
 		DockerContainer f = a.container(falseName)
-		
+
 		assertThat t.inspect(), is(null)
 		assertThat f.inspect(), is(null)
 
@@ -85,5 +88,43 @@ class DockerContainerTest extends ProjectTestCase {
 		JobScheduler.execute(ApplianceJob.Stop, a)
 		assertThat t.inspect().state, is(State.STOPPED)
 		assertThat f.inspect(), is(null)
+	}
+
+	@Test
+	void testVolumeBind() {
+		DockerContainer w, r
+		Project project = newRootProject()
+		project.with {
+			docker {
+				w = container ('writer') {
+					image BUSYBOX_IMAGE
+					volume '/tmp', '/hosttmp'
+					cmd 'touch', '/hosttmp/x'
+				}
+				r = container ('reader') {
+					image BUSYBOX_IMAGE
+					volume '/tmp', '/hosttmp2'
+					cmd 'touch', '/hosttmp2/y'
+				}
+			}
+		}
+		start w
+		start r
+	}
+	
+	@Test
+	void testLogs() {
+		DockerContainer c
+		projectWithDocker {
+			c = container('c') {
+				image BUSYBOX_IMAGE
+				cmd 'sh', '-c', "echo a"
+			}
+			
+		}
+		start c
+		def s = c.logStream().text.trim()
+		assertThat s, is("a")
+		stop c
 	}
 }
