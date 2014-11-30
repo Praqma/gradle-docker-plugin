@@ -1,6 +1,5 @@
 package net.praqma.gradle.docker
 
-import groovy.lang.Closure;
 import groovy.transform.CompileStatic
 import groovy.transform.CompileDynamic
 import groovy.transform.Immutable
@@ -13,11 +12,13 @@ import org.gradle.api.Project
 import com.github.dockerjava.api.NotModifiedException
 import com.github.dockerjava.api.command.CreateContainerCmd
 import com.github.dockerjava.api.command.CreateContainerResponse
+import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.command.StartContainerCmd
 import com.github.dockerjava.api.model.ExposedPort
 import com.github.dockerjava.api.model.Link
 import com.github.dockerjava.api.model.Ports
 import com.github.dockerjava.api.model.Volume
+import com.github.dockerjava.api.model.Bind
 
 
 @CompileStatic
@@ -25,6 +26,7 @@ class DockerContainer extends DockerCompute {
 
 	private Collection<DockerPortBinding> portBindings = [] as Set
 	private Collection<String> volumes = [] as Set
+	private Collection<VolumeBind2> volumeBinds = [] as Set
 	private Collection<String> volumesFrom = [] as Set
 	private Collection<LinkInfo> links = [] as Set
 	private Map<String, String> env = [:]
@@ -35,6 +37,7 @@ class DockerContainer extends DockerCompute {
 	String[] cmd
 
 	private String containerId
+
 	@CompileDynamic
 	DockerContainer(String name, CompositeCompute parent) {
 		super(name, parent)
@@ -93,6 +96,10 @@ class DockerContainer extends DockerCompute {
 		this.volumes << volume
 	}
 
+	void volume(String hostPath, String containerPath) {
+		this.volumeBinds << new VolumeBind2(hostPath, containerPath)
+	}
+
 	void volumesFrom(DockerContainer container) {
 		volumesFrom(container.name)
 	}
@@ -134,7 +141,7 @@ class DockerContainer extends DockerCompute {
 		return containerId
 	}
 
-	def start() {
+	void start() {
 		assert this.containerId != null
 		logger.warn "Starting Docker container from image ${image}"
 		Ports ports = new Ports()
@@ -145,7 +152,7 @@ class DockerContainer extends DockerCompute {
 		StartContainerCmd cmd = dockerClient.startContainerCmd(containerId)
 				.withLinks(links.collect { LinkInfo li -> new Link(calculateFullName(li.name), li.alias) } as Link[])
 				.withPortBindings(ports)
-				.withBinds()
+				.withBinds(volumeBinds.collect { VolumeBind2 vb -> new Bind(vb.hostPath, new Volume(vb.volume)) } as Bind[])
 		// TODO set more volumes
 		if (this.volumesFrom.size() > 0) {
 			cmd.withVolumesFrom(calculateFullName(volumesFrom.first()))
@@ -156,6 +163,20 @@ class DockerContainer extends DockerCompute {
 			// container already started
 			// TODO make sure it is configured as desired
 		}
+	}
+
+	InputStream logStream(LogSpec logSpec) {
+		LogContainerCmd c = dockerClient.logContainerCmd(containerId)
+		logSpec.applyToCmd(c)
+		c.exec()
+	}
+
+	InputStream logStream(Map m) {
+		logStream(m as LogSpec)
+	}
+
+	InputStream logStream() {
+		logStream([:])
 	}
 
 	def kill() {
@@ -181,7 +202,7 @@ class DockerContainer extends DockerCompute {
 			}
 		}
 	}
-	
+
 	def port(int hostPort, int port = hostPort) {
 		def portBinding = new DockerPortBinding(hostPort, port)
 		portBindings << portBinding
@@ -221,6 +242,12 @@ class DockerContainer extends DockerCompute {
 	String toString() {
 		"Container(${fullName})"
 	}
+
+	class Execution {
+		boolean isRunning
+		int returnCode
+		final InputStream logs
+	}
 }
 
 
@@ -230,4 +257,11 @@ class DockerContainer extends DockerCompute {
 class LinkInfo {
 	String name
 	String alias
+}
+
+@Immutable
+@CompileStatic
+class VolumeBind2 {
+	String hostPath
+	String volume
 }
