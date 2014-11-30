@@ -41,23 +41,6 @@ class DockerPluginExtension extends DockerDslObject implements CompositeCompute 
 		images.getObject(name, LocalDockerImage, configBlock)
 	}
 
-	void assignAllContanerIds() {
-		Map<String,String> name2id = [:]
-		Collection<Container> containerList = dockerClient.listContainersCmd().withShowAll(true).exec() as Collection<Container>
-		containerList.each { Container c ->
-			c.names.each { String n ->
-				assert n[0] == '/'
-				name2id[n.substring(1)] = c.id
-			}
-		}
-		traverse(DockerContainer) {  DockerContainer c ->
-			String id = name2id[c.fullName]
-			if (id != null) {
-				c.containerId = id
-			}
-		}
-	}
-
 	void postProcess() {
 		//images.each { LocalDockerImage img -> img.postProcess() }
 		traverse(DockerCompute) { DockerCompute c -> c.postProcess() }

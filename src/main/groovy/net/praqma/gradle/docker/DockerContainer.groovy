@@ -9,6 +9,7 @@ import net.praqma.gradle.docker.jobs.ContainerJob
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 
+import com.github.dockerjava.api.NotFoundException;
 import com.github.dockerjava.api.NotModifiedException
 import com.github.dockerjava.api.command.CreateContainerCmd
 import com.github.dockerjava.api.command.CreateContainerResponse
@@ -35,8 +36,6 @@ class DockerContainer extends DockerCompute {
 	String localImage
 	String persistent
 	String[] cmd
-
-	private String containerId
 
 	@CompileDynamic
 	DockerContainer(String name, CompositeCompute parent) {
@@ -120,8 +119,9 @@ class DockerContainer extends DockerCompute {
 		parent.project
 	}
 
-	String create(String imageId) {
+	void create(String imageId) {
 		assert imageId != null
+		String containerId = findContainerByName(fullName)?.id
 		if (containerId == null) {
 			logger.info "Creating Docker container from ${imageId}"
 			CreateContainerCmd c = dockerClient.createContainerCmd(imageId)
@@ -134,22 +134,20 @@ class DockerContainer extends DockerCompute {
 			CreateContainerResponse resp = c.exec()
 			assert resp.id != null
 			if (resp.warnings) {
+				// TODO better handling of warnings
 				resp.warnings.each { println it }
 			}
-			containerId = resp.id
 		}
-		return containerId
 	}
 
 	void start() {
-		assert this.containerId != null
 		logger.warn "Starting Docker container from image ${image}"
 		Ports ports = new Ports()
 		portBindings.each { DockerPortBinding binding ->
 			ports.bind(ExposedPort.tcp(binding.containerPort), new Ports.Binding(binding.hostPort))
 		}
 
-		StartContainerCmd cmd = dockerClient.startContainerCmd(containerId)
+		StartContainerCmd cmd = dockerClient.startContainerCmd(fullName)
 				.withLinks(links.collect { LinkInfo li -> new Link(calculateFullName(li.name), li.alias) } as Link[])
 				.withPortBindings(ports)
 				.withBinds(volumeBinds.collect { VolumeBind2 vb -> new Bind(vb.hostPath, new Volume(vb.volume)) } as Bind[])
@@ -166,7 +164,7 @@ class DockerContainer extends DockerCompute {
 	}
 
 	InputStream logStream(LogSpec logSpec) {
-		LogContainerCmd c = dockerClient.logContainerCmd(containerId)
+		LogContainerCmd c = dockerClient.logContainerCmd(fullName)
 		logSpec.applyToCmd(c)
 		c.exec()
 	}
@@ -180,26 +178,18 @@ class DockerContainer extends DockerCompute {
 	}
 
 	def kill() {
-		if (containerId != null) {
-			dockerClient.killContainerCmd(containerId).exec()
-		}
+		dockerClient.killContainerCmd(fullName).exec()
 	}
 
 	def remove() {
-		if (containerId != null) {
-			String id = containerId
-			this.containerId = null
-			dockerClient.removeContainerCmd(id).exec()
-		}
+		dockerClient.removeContainerCmd(fullName).exec()
 	}
 
 	def stop() {
-		if (containerId != null) {
-			try {
-				dockerClient.stopContainerCmd(containerId).exec()
-			} catch (NotModifiedException e) {
-				// Container already stopped. Ignore.
-			}
+		try {
+			dockerClient.stopContainerCmd(fullName).exec()
+		} catch (NotModifiedException e) {
+			// Container already stopped. Ignore.
 		}
 	}
 
@@ -209,10 +199,11 @@ class DockerContainer extends DockerCompute {
 	}
 
 	ContainerInspect inspect() {
-		if (containerId == null) {
+		try {
+			new ContainerInspect(fullName, dockerClient.inspectContainerCmd(fullName).exec())
+		} catch (NotFoundException e) {
 			return null
 		}
-		new ContainerInspect(fullName, dockerClient.inspectContainerCmd(containerId).exec())
 	}
 
 	private String calculateFullName(String name) {

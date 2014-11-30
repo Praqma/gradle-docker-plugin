@@ -87,14 +87,12 @@ abstract class DockerObject {
 
 	ContainerInfo findContainerByName(String fullName) {
 		Collection<Container> containerList = dockerClient.listContainersCmd().withShowAll(true).exec() as Collection<Container>
-		Container c = containerList.find { Container c ->
-			c.names.contains("/${fullName}")
-		}
-		if (c) {
-			new ContainerInfo(c.id, c.image)
-		} else {
-			null
-		}
+		
+		Map<String, ContainerInfo> m = [:]
+		(containerList.each{ Container c ->
+			c.names.collect { String n -> [n[1..-1], new ContainerInfo(c.id, c.image)] }.collectEntries(m)
+		})
+		m[fullName] 
 	}
 }
 

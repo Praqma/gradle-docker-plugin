@@ -66,9 +66,7 @@ abstract class ContainerJob extends Job {
 			super.init(container)
 			ContainerInfo info = container.findContainerByName(container.fullName)
 			if (info != null) {
-				String id = info.getId()
-				container.containerId = id
-				complete(id)
+				complete(info.id)
 			} else {
 				if (container.localImage != null) {
 					LocalDockerImage image = container.dockerExtension.image(container.localImage)
@@ -97,13 +95,9 @@ abstract class ContainerJob extends Job {
 
 		@Override
 		public Answer doExecute() {
-			if (container.containerId == null) {
-				logInfo 'asked to kill, but no underlying container'
-			} else {
-				logInfo "killing, id: ${container.containerId}"
-				container.kill()
-				logInfo 'killed'
-			}
+			logInfo "killing, id: ${container.fullName}"
+			container.kill()
+			logInfo 'killed'
 			Answer.success()
 		}
 	}
@@ -112,13 +106,9 @@ abstract class ContainerJob extends Job {
 
 		@Override
 		public Answer doExecute() {
-			if (container.containerId == null) {
-				logInfo 'asked to remove, but no underlying container'
-			} else {
-				logInfo "removing, id: ${container.containerId}"
-				container.remove()
-				logInfo 'removed'
-			}
+			logInfo "removing, id: ${container.fullName}"
+			container.remove()
+			logInfo 'removed'
 			Answer.success()
 		}
 	}
