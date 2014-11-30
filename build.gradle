@@ -5,9 +5,9 @@ apply plugin: 'groovy'
 apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
 
-repositories { jcenter() }
+repositories {  jcenter()  }
 
-targetCompatibility = sourceCompatibility = '1.6'
+targetCompatibility = sourceCompatibility = '1.7'
 
 group = 'net.praqma.gradle'
 version = '0.2'
@@ -21,15 +21,23 @@ ext {
 
 dependencies {
 	compile gradleApi()
-
 	compile localGroovy()
 
 	compile 'com.github.docker-java:docker-java:0.10.3'
-	//compile 'com.github.docker-java:docker-java:0.10.4-SNAPSHOT'
-	
-	testCompile 'com.google.guava:guava:18.0'
+	//compile ('com.github.docker-java:docker-java:0.10.4-SNAPSHOT')
+
+	testCompile 'com.google.guava:guava:18+'
 	testCompile 'junit:junit:4.11'
 	testCompile 'org.hamcrest:hamcrest-library:1.3'
+}
+
+test {
+	// When executing test bouncy castle from gradle is different signature than bouncy castle from java-dockker
+	// so remove it.
+	classpath = classpath.filter { File f ->
+		!f.name.equals('bcprov-jdk15-1.46.jar')
+	}
+
 }
 
 task sourceJar(type: Jar) {
@@ -77,40 +85,38 @@ bintray {
 }
 
 /*
-
-eclipse.classpath.file {
-	whenMerged { Classpath cp ->
-		String gradleHome = gradle.getGradleHomeDir().absolutePath
-		FileReferenceFactory fileRefFactory = new FileReferenceFactory()
-		String gradleSrc = "${gradleHome}/src" // src doesn't exists for binary gradle distributions
-		assert new File(gradleSrc).exists()
-		cp.entries.findAll{  it instanceof Library && it.sourcePath == null}.each{ Library lib ->
-			File jarFile = new File(lib.path)
-			if (jarFile.path.startsWith(gradleHome)){
-				switch (jarFile.name) {
-					case { it.startsWith("gradle-") }:
-						lib.sourcePath = fileRefFactory.fromPath(gradleSrc)
-						break
-					case "groovy-all-${GroovySystem.version}.jar":
-						def componentIds = configurations.groovy.incoming.resolutionResult.allDependencies.collect { it.selected.id }
-						def result = dependencies.createArtifactResolutionQuery()
-								.forComponents(componentIds)
-								.withArtifacts(JvmLibrary, SourcesArtifact)
-								.execute()
-						def resolvedComponent = singleElement(result.resolvedComponents)
-						def src = singleElement(resolvedComponent.getArtifacts(SourcesArtifact)).file
-						lib.sourcePath = fileRefFactory.fromFile(src)
-						break
-				}
-			}
-		}
-	}
-}
-
-def singleElement(Iterable collection) {
-	def iter = collection.iterator()
-	def answer = iter.next()
-	assert !iter.hasNext()
-	answer
-}
-*/
+ eclipse.classpath.file {
+ whenMerged { Classpath cp ->
+ String gradleHome = gradle.getGradleHomeDir().absolutePath
+ FileReferenceFactory fileRefFactory = new FileReferenceFactory()
+ String gradleSrc = "${gradleHome}/src" // src doesn't exists for binary gradle distributions
+ assert new File(gradleSrc).exists()
+ cp.entries.findAll{  it instanceof Library && it.sourcePath == null}.each{ Library lib ->
+ File jarFile = new File(lib.path)
+ if (jarFile.path.startsWith(gradleHome)){
+ switch (jarFile.name) {
+ case { it.startsWith("gradle-") }:
+ lib.sourcePath = fileRefFactory.fromPath(gradleSrc)
+ break
+ case "groovy-all-${GroovySystem.version}.jar":
+ def componentIds = configurations.groovy.incoming.resolutionResult.allDependencies.collect { it.selected.id }
+ def result = dependencies.createArtifactResolutionQuery()
+ .forComponents(componentIds)
+ .withArtifacts(JvmLibrary, SourcesArtifact)
+ .execute()
+ def resolvedComponent = singleElement(result.resolvedComponents)
+ def src = singleElement(resolvedComponent.getArtifacts(SourcesArtifact)).file
+ lib.sourcePath = fileRefFactory.fromFile(src)
+ break
+ }
+ }
+ }
+ }
+ }
+ def singleElement(Iterable collection) {
+ def iter = collection.iterator()
+ def answer = iter.next()
+ assert !iter.hasNext()
+ answer
+ }
+ */
