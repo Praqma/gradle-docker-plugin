@@ -37,7 +37,7 @@ test {
 	classpath = classpath.filter { File f ->
 		!f.name.equals('bcprov-jdk15-1.46.jar')
 	}
-
+	dependsOn testClasses
 }
 
 task sourceJar(type: Jar) {
