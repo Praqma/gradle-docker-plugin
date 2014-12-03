@@ -1,7 +1,7 @@
 package net.praqma.gradle.docker.jobs
 
 import groovy.transform.CompileStatic
-import net.praqma.gradle.docker.ContainerInfo
+import net.praqma.docker.connection.ContainerInfo
 import net.praqma.gradle.docker.DockerContainer
 import net.praqma.gradle.docker.LinkInfo
 import net.praqma.gradle.docker.LocalDockerImage
@@ -64,9 +64,8 @@ abstract class ContainerJob extends Job {
 		@Override
 		public void init(DockerContainer container) {
 			super.init(container)
-			ContainerInfo info = container.findContainerByName(container.fullName)
-			if (info != null) {
-				complete(info.id)
+			if (container.containerId != null) {
+				complete(container.containerId)
 			} else {
 				if (container.localImage != null) {
 					LocalDockerImage image = container.dockerExtension.image(container.localImage)

@@ -2,17 +2,35 @@ package net.praqma.gradle.docker
 
 import groovy.transform.CompileStatic
 import groovy.transform.CompileDynamic
+import net.praqma.docker.connection.HostConnection
+import net.praqma.docker.connection.HostSpec
 
+import org.gradle.BuildAdapter
+import org.gradle.BuildResult
 import org.gradle.api.Project
-
-import com.github.dockerjava.api.model.Container
 
 @CompileStatic
 class DockerPluginExtension extends DockerDslObject implements CompositeCompute {
 
-	final Project project
 	private final NamedObjects<LocalDockerImage> images
 
+	final HostSpec host = new HostSpec()
+
+	final HostConnection connection = new HostConnection()
+	
+	final Project project
+
+	void host(Closure closure) {
+		host.with closure
+	}
+
+	@CompileStatic
+	class BuildListener extends BuildAdapter {
+		void buildFinished(BuildResult result) {
+			connection.shutdown()
+		}
+	}
+	
 	@CompileDynamic
 	DockerPluginExtension(Project project) {
 		super("DockerPluginExtension", null)
@@ -35,6 +53,8 @@ class DockerPluginExtension extends DockerDslObject implements CompositeCompute 
 				].each { String key -> println "${key} = ${m[key]}" }
 			}
 		}
+		project.gradle.addBuildListener(new BuildListener())
+		connection.start(host, project.logger)
 	}
 
 	LocalDockerImage image(String name, Closure configBlock = null) {

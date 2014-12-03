@@ -1,6 +1,6 @@
 package net.praqma.gradle.docker.tasks
 
-import net.praqma.gradle.docker.DockerHost
+import net.praqma.docker.connection.HostSpec;
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
@@ -15,7 +15,7 @@ class CleanHost extends DefaultTask {
 
 	@Optional
 	@Input
-	DockerHost host
+	HostSpec host
 
 	@Optional
 	@Input

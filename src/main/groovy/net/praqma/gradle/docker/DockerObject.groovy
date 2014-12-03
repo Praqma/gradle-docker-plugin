@@ -1,8 +1,8 @@
 package net.praqma.gradle.docker
 
 import groovy.transform.CompileStatic
-import groovy.transform.Immutable
 import groovy.transform.TypeCheckingMode
+import net.praqma.docker.connection.HostConnection
 import net.praqma.gradle.docker.jobs.Job
 import net.praqma.gradle.docker.tasks.JobBasedTask
 
@@ -12,34 +12,22 @@ import org.gradle.api.logging.Logger
 
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.model.Container
-import com.github.dockerjava.core.DockerClientBuilder
-import com.github.dockerjava.core.DockerClientConfig
-import com.github.dockerjava.core.DockerClientConfig.DockerClientConfigBuilder
 
 @CompileStatic
 abstract class DockerObject {
 
-	private DockerHost host
 	final DockerObject parent
-
-	@Lazy DockerClient dockerClient = {
-		DockerClientConfigBuilder configBuilder = DockerClientConfig.createDefaultConfigBuilder()
-		host.addToClientConfigBuilder(configBuilder)
-		DockerClient client = DockerClientBuilder.getInstance(configBuilder.build()).build()
-		client
-	}()
 
 	DockerObject(DockerObject parent) {
 		this.@parent = parent
 	}
 
-	DockerHost getHost() {
-		this.@host ?: parent.host
+	HostConnection getConnection() {
+		parent.connection
 	}
 
-	void host(Closure closure) {
-		if (this.@host == null) this.@host = new DockerHost()
-		this.@host.with closure
+	DockerClient getDockerClient() {
+		connection.client
 	}
 
 	Project getProject() {
@@ -85,20 +73,4 @@ abstract class DockerObject {
 		project.logger
 	}
 
-	ContainerInfo findContainerByName(String fullName) {
-		Collection<Container> containerList = dockerClient.listContainersCmd().withShowAll(true).exec() as Collection<Container>
-		
-		Map<String, ContainerInfo> m = [:]
-		(containerList.each{ Container c ->
-			c.names.collect { String n -> [n[1..-1], new ContainerInfo(c.id, c.image)] }.collectEntries(m)
-		})
-		m[fullName] 
-	}
-}
-
-@Immutable
-@CompileStatic
-class ContainerInfo {
-	String id
-	String imageId
 }

@@ -17,7 +17,6 @@ class JobBasedTask extends DefaultTask {
 
 	@TaskAction
 	void executeJob() {
-		project.docker.assignAllContanerIds()
 		JobScheduler.execute(jobClass, *args)
 	}
 }

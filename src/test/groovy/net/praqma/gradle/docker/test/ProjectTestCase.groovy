@@ -36,7 +36,9 @@ class ProjectTestCase {
 
 	Project projectWithDocker(Closure c) {
 		Project project = newRootProject()
-		project.with { docker.with(c) }
+		project.with {
+			docker.with(c)
+		}
 		project
 	}
 
@@ -54,5 +56,16 @@ class ProjectTestCase {
 
 	void remove(DockerContainer c) {
 		JobScheduler.execute(ContainerJob.Remove, c)
+	}
+	
+	void waitFor(int ms, Closure cond) {
+		while (!cond()) {
+			if (ms > 0) {
+				sleep 50
+				ms -= 50
+			} else {
+				assert cond() : "Condition not reached in $ms milleseconds"
+			}
+		}
 	}
 }

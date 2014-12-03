@@ -1,7 +1,7 @@
-package net.praqma.gradle.docker
+package net.praqma.docker.connection
 
 import groovy.transform.CompileStatic
-import groovy.transform.ToString;
+import groovy.transform.ToString
 
 import org.gradle.api.GradleException
 
@@ -12,7 +12,7 @@ import com.github.dockerjava.core.DockerClientConfig.DockerClientConfigBuilder
 
 @CompileStatic
 @ToString
-class DockerHost {
+class HostSpec {
 
 	private URI _uri
 	private File _certPath

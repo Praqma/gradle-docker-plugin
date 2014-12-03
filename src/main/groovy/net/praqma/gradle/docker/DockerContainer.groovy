@@ -4,30 +4,35 @@ import groovy.transform.CompileStatic
 import groovy.transform.CompileDynamic
 import groovy.transform.Immutable
 import groovy.transform.TypeCheckingMode
+import net.praqma.docker.connection.EventName
 import net.praqma.gradle.docker.jobs.ContainerJob
 
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 
-import com.github.dockerjava.api.NotFoundException;
+import com.github.dockerjava.api.NotFoundException
 import com.github.dockerjava.api.NotModifiedException
 import com.github.dockerjava.api.command.CreateContainerCmd
 import com.github.dockerjava.api.command.CreateContainerResponse
-import com.github.dockerjava.api.command.LogContainerCmd;
+import com.github.dockerjava.api.command.InspectContainerResponse
+import com.github.dockerjava.api.command.LogContainerCmd
 import com.github.dockerjava.api.command.StartContainerCmd
+import com.github.dockerjava.api.model.Bind
+import com.github.dockerjava.api.model.Event
 import com.github.dockerjava.api.model.ExposedPort
 import com.github.dockerjava.api.model.Link
 import com.github.dockerjava.api.model.Ports
 import com.github.dockerjava.api.model.Volume
-import com.github.dockerjava.api.model.Bind
 
 
 @CompileStatic
 class DockerContainer extends DockerCompute {
 
+	private String cid = '?'
+	private Map<EventName, List<Closure>> eventRegistry
 	private Collection<DockerPortBinding> portBindings = [] as Set
 	private Collection<String> volumes = [] as Set
-	private Collection<VolumeBind2> volumeBinds = [] as Set
+	private Collection<VolumeBind> volumeBinds = [] as Set
 	private Collection<String> volumesFrom = [] as Set
 	private Collection<LinkInfo> links = [] as Set
 	private Map<String, String> env = [:]
@@ -40,6 +45,8 @@ class DockerContainer extends DockerCompute {
 	@CompileDynamic
 	DockerContainer(String name, CompositeCompute parent) {
 		super(name, parent)
+		eventRegistry = new EnumMap<EventName, List<Closure>>(EventName).withDefault {[]}
+		connection.updateCache(this)
 		this.image = new RemoteDockerImage(this)
 		prepareTask = project.tasks.create(name: taskName('Prepare'))
 		if (parent.metaClass.hasProperty("prepareTask")) {
@@ -56,6 +63,13 @@ class DockerContainer extends DockerCompute {
 		prepareTask.dependsOn LocalDockerImage.copyTaskName(liName)
 	}
 
+	synchronized String getContainerId() {
+		if (this.@cid == '?') {
+			connection.updateContainer(this)
+		}
+		this.@cid
+	}
+
 	CompositeCompute getOwner() {
 		parent as CompositeCompute
 	}
@@ -64,14 +78,14 @@ class DockerContainer extends DockerCompute {
 		String[] parts = image.split(':')
 		switch (parts.length) {
 			case 1:
-				this.image.repository = parts[0]
-				break
+			this.image.repository = parts[0]
+			break
 			case 2:
-				this.image.repository = parts[0]
-				this.image.tag = parts[1]
-				break
+			this.image.repository = parts[0]
+			this.image.tag = parts[1]
+			break
 			default:
-				throw new GradleException()
+			throw new GradleException()
 		}
 	}
 
@@ -96,7 +110,7 @@ class DockerContainer extends DockerCompute {
 	}
 
 	void volume(String hostPath, String containerPath) {
-		this.volumeBinds << new VolumeBind2(hostPath, containerPath)
+		this.volumeBinds << new VolumeBind(hostPath, containerPath)
 	}
 
 	void volumesFrom(DockerContainer container) {
@@ -121,13 +135,15 @@ class DockerContainer extends DockerCompute {
 
 	void create(String imageId) {
 		assert imageId != null
-		String containerId = findContainerByName(fullName)?.id
+		String containerId = null
 		if (containerId == null) {
 			logger.info "Creating Docker container from ${imageId}"
 			CreateContainerCmd c = dockerClient.createContainerCmd(imageId)
-					.withName(fullName)
-					.withVolumes(volumes.collect { new Volume(it as String) } as Volume[])
-					.withEnv(map2StringArray(env))
+			.withName(fullName)
+			.withVolumes(volumes.collect {
+				new Volume(it as String)
+			} as Volume[])
+			.withEnv(map2StringArray(env))
 			if (cmd != null) {
 				c.withCmd(cmd)
 			}
@@ -137,7 +153,10 @@ class DockerContainer extends DockerCompute {
 				// TODO better handling of warnings
 				resp.warnings.each { println it }
 			}
+			this.@cid = resp.id
+			connection.updateCache(this, resp.id)
 		}
+		this.@cid
 	}
 
 	void start() {
@@ -147,10 +166,10 @@ class DockerContainer extends DockerCompute {
 			ports.bind(ExposedPort.tcp(binding.containerPort), new Ports.Binding(binding.hostPort))
 		}
 
-		StartContainerCmd cmd = dockerClient.startContainerCmd(fullName)
-				.withLinks(links.collect { LinkInfo li -> new Link(calculateFullName(li.name), li.alias) } as Link[])
-				.withPortBindings(ports)
-				.withBinds(volumeBinds.collect { VolumeBind2 vb -> new Bind(vb.hostPath, new Volume(vb.volume)) } as Bind[])
+		StartContainerCmd cmd = dockerClient.startContainerCmd(containerId)
+		.withLinks(links.collect { LinkInfo li -> new Link(calculateFullName(li.name), li.alias) } as Link[])
+		.withPortBindings(ports)
+		.withBinds(volumeBinds.collect { VolumeBind vb -> new Bind(vb.hostPath, new Volume(vb.volume)) } as Bind[])
 		// TODO set more volumes
 		if (this.volumesFrom.size() > 0) {
 			cmd.withVolumesFrom(calculateFullName(volumesFrom.first()))
@@ -187,7 +206,7 @@ class DockerContainer extends DockerCompute {
 
 	def stop() {
 		try {
-			dockerClient.stopContainerCmd(fullName).exec()
+			dockerClient.stopContainerCmd(containerId).exec()
 		} catch (NotModifiedException e) {
 			// Container already stopped. Ignore.
 		}
@@ -234,10 +253,22 @@ class DockerContainer extends DockerCompute {
 		"Container(${fullName})"
 	}
 
-	class Execution {
-		boolean isRunning
-		int returnCode
-		final InputStream logs
+	void when(String event, Closure action) {
+		when(event as EventName, action)
+	}
+
+	void when(EventName event, Closure action) {
+		eventRegistry[event] << action
+	}
+
+	void dispatchEvent(Event event) {
+		EventName e = event.status as EventName
+		logger.info "Dispatching ${e} for ${this}"
+		eventRegistry[e].each { it() }	
+	}
+	
+	void updateFrom(InspectContainerResponse icr) {
+		this.@cid = icr?.id
 	}
 }
 
@@ -252,7 +283,7 @@ class LinkInfo {
 
 @Immutable
 @CompileStatic
-class VolumeBind2 {
+class VolumeBind {
 	String hostPath
 	String volume
 }
