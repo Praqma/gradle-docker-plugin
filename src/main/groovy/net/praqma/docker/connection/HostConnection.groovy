@@ -127,8 +127,7 @@ class HostConnection implements EventCallback {
 	
 	@Override
 	void onEvent(Event event) {
-		println "JHS xxxxxxxxxxxxxxxxxxxxxxxxxx"
-		log event
+		log "Revieved event: ${event}"
 		idCache.getIfPresent(event.id)?.dispatchEvent(event)
 	}
 
