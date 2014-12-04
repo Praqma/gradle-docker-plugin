@@ -40,10 +40,8 @@ abstract class Job extends ForkJoinTask<Object> {
 			case Answer.Retry:
 				factory.retryJob(this, answer as Answer.Retry)
 				return isCompletedNormally()
-			case Answer.OtherJob:
-				Job otherJob = (answer as Answer.OtherJob).job
-				factory.resultFromJob(this, otherJob)
-				return isCompletedNormally()
+			default:
+				throw new RuntimeException('internal error')
 		}
 	}
 

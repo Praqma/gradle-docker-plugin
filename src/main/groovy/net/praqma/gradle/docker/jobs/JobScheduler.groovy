@@ -68,19 +68,6 @@ class JobScheduler {
 		pendingSubmits = null // new submits are submitted immediately
 		pool.invoke(theJob)
 	}
-
-	private Collection<Job> initJobs(Job job) {
-		def seenJobs = [] as Set<Job>
-		Queue<Job> queue = [job] as ArrayDeque
-		Job j
-		while (null != (j = queue.poll())) {
-			boolean added = seenJobs.add(j)
-			if (added) {
-				queue.addAll(j.preJobs)
-			}
-		}
-		seenJobs
-	}
 }
 
 class RetryJob extends Job {

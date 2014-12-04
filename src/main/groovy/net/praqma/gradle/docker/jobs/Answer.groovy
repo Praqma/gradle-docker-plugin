@@ -25,10 +25,6 @@ class Answer {
 		}
 	}
 
-	static class OtherJob extends Answer {
-		Job job
-	}
-
 	static Answer success(value = null) {
 		new Success(value)
 	}

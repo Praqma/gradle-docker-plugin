@@ -23,21 +23,6 @@ import com.google.common.cache.CacheBuilder
 @CompileStatic
 class HostConnection implements EventCallback {
 
-	/*
-	 @Override
-	 public Map<String, ContainerInfo> loadAll(Iterable<? extends String> keys)  {
-	 logger.info "Loading container cache"
-	 Collection<Container> containerList = dockerClient.listContainersCmd().withShowAll(true).exec() as Collection<Container>
-	 logger.info "Loading container cache. Found ${containerList.size()} containers."
-	 def m = (containerList.inject([:].withDefault{NULL_CONTAINTER_INFO}) { Map<String, ContainerInfo> m, Container c ->
-	 ContainerInfo ci = new ContainerInfo(c.id, c.image)
-	 c.names.collect { String n ->
-	 [n[1..-1], ci]
-	 }.collectEntries(m)
-	 }) as Map<String, ContainerInfo>
-	 m
-	 }
-	 */
 	private Logger logger
 
 	private HostSpec hostSpec
@@ -85,6 +70,7 @@ class HostConnection implements EventCallback {
 		logger.info "Starting Docker host connection"
 		this.hostSpec = hostSpec
 		this.logger = logger
+		assert this.executorService == null
 		this.executorService = dockerClient.eventsCmd(this).exec()
 	}
 
@@ -93,6 +79,7 @@ class HostConnection implements EventCallback {
 		hostSpec = null
 		logger = null
 		executorService?.shutdown()
+		executorService = null
 	}
 
 	private DockerClient initDockerClient() {
