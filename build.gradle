@@ -12,13 +12,13 @@ repositories {
 targetCompatibility = sourceCompatibility = '1.7'
 
 group = 'net.praqma.gradle'
-version = '0.2'
+version = '0.3'
 description = 'Gradle plugin to orchestrate Docker containers'
 
 ext {
 	pluginId = 'net.praqma.docker'
 	artifact = 'gradle-docker-plugin'
-	github = 'https://github.com/Praqma/gradle-custom-dist-plugin'
+	github = 'https://github.com/Praqma/gradle-docker-plugin'
 }
 
 dependencies {
