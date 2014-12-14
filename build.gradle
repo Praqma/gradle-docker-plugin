@@ -25,8 +25,7 @@ dependencies {
 	//compile localGroovy()
 	compile "org.codehaus.groovy:groovy-all:${GroovySystem.version}"
 
-	compile 'com.github.docker-java:docker-java:0.10.3'
-	//compile ('com.github.docker-java:docker-java:0.10.4-SNAPSHOT')
+	compile 'com.github.docker-java:docker-java:0.10.4'
 
 	testCompile 'com.google.guava:guava:18+'
 	testCompile 'junit:junit:4.11'
