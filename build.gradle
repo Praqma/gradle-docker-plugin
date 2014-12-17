@@ -12,7 +12,7 @@ repositories {
 targetCompatibility = sourceCompatibility = '1.7'
 
 group = 'net.praqma.gradle'
-version = '0.3'
+version = '0.3.1'
 description = 'Gradle plugin to orchestrate Docker containers'
 
 ext {
@@ -65,8 +65,8 @@ publishing {
 
 bintray {
 	// E.g. defined in gradle.properties
-	user = project.bintrayUser
-	key = project.bintrayApiKey
+	user = project.hasProperty('bintrayUser')  ? project.bintrayUser   : '<unset>'
+	key = project.hasProperty('bintrayApiKey') ? project.bintrayApiKey : '<unset>'
 
 	publications = ['plugin']
 	dryRun = false //Whether to run this as dry-run, without deploying
@@ -76,7 +76,7 @@ bintray {
 		userOrg = 'praqma'
 		name = artifact
 		desc = project.description
-		websiteUrl = github
+                websiteUrl = github
 		vcsUrl = "${project.github}.git"
 		licenses = ['Apache-2.0']
 		publicDownloadNumbers = true
@@ -86,40 +86,3 @@ bintray {
 		}
 	}
 }
-
-/*
- eclipse.classpath.file {
- whenMerged { Classpath cp ->
- String gradleHome = gradle.getGradleHomeDir().absolutePath
- FileReferenceFactory fileRefFactory = new FileReferenceFactory()
- String gradleSrc = "${gradleHome}/src" // src doesn't exists for binary gradle distributions
- assert new File(gradleSrc).exists()
- cp.entries.findAll{  it instanceof Library && it.sourcePath == null}.each{ Library lib ->
- File jarFile = new File(lib.path)
- if (jarFile.path.startsWith(gradleHome)){
- switch (jarFile.name) {
- case { it.startsWith("gradle-") }:
- lib.sourcePath = fileRefFactory.fromPath(gradleSrc)
- break
- case "groovy-all-${GroovySystem.version}.jar":
- def componentIds = configurations.groovy.incoming.resolutionResult.allDependencies.collect { it.selected.id }
- def result = dependencies.createArtifactResolutionQuery()
- .forComponents(componentIds)
- .withArtifacts(JvmLibrary, SourcesArtifact)
- .execute()
- def resolvedComponent = singleElement(result.resolvedComponents)
- def src = singleElement(resolvedComponent.getArtifacts(SourcesArtifact)).file
- lib.sourcePath = fileRefFactory.fromFile(src)
- break
- }
- }
- }
- }
- }
- def singleElement(Iterable collection) {
- def iter = collection.iterator()
- def answer = iter.next()
- assert !iter.hasNext()
- answer
- }
- */
