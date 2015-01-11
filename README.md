@@ -1,3 +1,3 @@
 # gradle-docker-plugin
 
-Gradle plugin to define and orchestate Docker images.
+Gradle plugin to define and orchestrate Docker images.
