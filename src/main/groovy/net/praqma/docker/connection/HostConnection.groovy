@@ -55,11 +55,15 @@ class HostConnection implements EventCallback {
 	DockerContainer containerNamed(String fullName) {
 		nameCache.getIfPresent(fullName)
 	}
-
-	void updateContainer(DockerContainer con) {
+	
+	void updateContainer(DockerContainer con, boolean remove) {
 		InspectContainerResponse icr
 		try {
-			icr = dockerClient.inspectContainerCmd(con.fullName).exec()
+			if (remove) {
+				dockerClient.removeContainerCmd(con.fullName ).exec()
+			} else {
+				icr = dockerClient.inspectContainerCmd(con.fullName).exec()
+			}
 		} catch (NotFoundException e) {
 			// OK. Update container from null
 		}

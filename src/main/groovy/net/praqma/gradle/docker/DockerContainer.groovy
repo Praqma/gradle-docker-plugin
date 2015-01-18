@@ -39,13 +39,13 @@ class DockerContainer extends DockerCompute {
 
 	final private RemoteDockerImage image
 	String localImage
-	String persistent
+	boolean persistent = false
 	String[] cmd
 
 	@CompileDynamic
 	DockerContainer(String name, CompositeCompute parent) {
 		super(name, parent)
-		eventRegistry = new EnumMap<EventName, List<Closure>>(EventName).withDefault { [] }
+		eventRegistry = new EnumMap<EventName, List<Closure>>(EventName).withDefault { []}
 		connection.updateCache(this)
 		this.image = new RemoteDockerImage(this)
 		prepareTask = project.tasks.create(name: taskName('Prepare'))
@@ -65,7 +65,7 @@ class DockerContainer extends DockerCompute {
 
 	synchronized String getContainerId() {
 		if (this.@cid == '?') {
-			connection.updateContainer(this)
+			connection.updateContainer(this, !persistent)
 		}
 		this.@cid
 	}
@@ -135,7 +135,7 @@ class DockerContainer extends DockerCompute {
 
 	void create(String imageId) {
 		assert imageId != null
-		String containerId = null
+
 		if (containerId == null) {
 			logger.info "Creating Docker container from ${imageId}"
 			CreateContainerCmd c = dockerClient.createContainerCmd(imageId)
