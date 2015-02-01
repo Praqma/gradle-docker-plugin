@@ -23,8 +23,6 @@ class DockerPlugin implements Plugin<Project> {
 			description "Remove all containers and images from the docker host"
 		}
 		
-		
-
 	}
 
 }

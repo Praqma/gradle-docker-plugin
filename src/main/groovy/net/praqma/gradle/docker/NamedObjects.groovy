@@ -1,7 +1,7 @@
 package net.praqma.gradle.docker
 
-import groovy.transform.CompileStatic
 import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
 
 import org.gradle.api.GradleException
 
@@ -22,7 +22,7 @@ class NamedObjects<T extends NamedObjectsElement> {
 	T getObject(String name, Class<?> expectedClass, Closure closure = null) {
 		T object = objects[name] as T
 		if (object == null) {
-			if (frozen) throw new RuntimeException("${getClass().simpleName} is frozen. Trying to create object named: ${name}")
+			if (frozen) throw new GradleException("${getClass().simpleName} is frozen. Trying to create object named: ${name}")
 			object = expectedClass.newInstance(name, parent) as T
 			objects[name] = object as T
 		} 
@@ -46,7 +46,7 @@ class NamedObjects<T extends NamedObjectsElement> {
 	}
 }
 
-trait NamedObjectsElement {
-	abstract String getName()
+interface NamedObjectsElement {
+	String getName()
 }
 

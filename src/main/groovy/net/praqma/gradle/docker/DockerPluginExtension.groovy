@@ -63,7 +63,7 @@ class DockerPluginExtension extends DockerDslObject implements CompositeCompute 
 
 	void postProcess() {
 		//images.each { LocalDockerImage img -> img.postProcess() }
-		traverse(DockerCompute) { DockerCompute c -> c.postProcess() }
+		//traverse(DockerCompute) { DockerCompute c -> c.postProcess() }
 	}
 
 }

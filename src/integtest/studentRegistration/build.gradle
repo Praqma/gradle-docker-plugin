@@ -1,0 +1,18 @@
+apply plugin: 'net.praqma.docker'
+
+docker {
+	image('tomcat') { dockerFile { fromImage 'tutum/tomcat:7.0' } }
+
+	image('db') { dockerFile { fromImage 'mysql:5.7' } }
+
+	appliance('studentApp') {
+		container ('db') { localImage = 'db' }
+		container ('tomcat') { localImage = 'tomcat' }
+		withTasks = true
+	}
+}
+
+task validate {
+	dependsOn applianceStudentAppStart
+	finalizedBy applianceStudentAppStop
+}

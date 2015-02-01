@@ -124,12 +124,14 @@ class HostConnection implements EventCallback {
 
 	@Override
 	void onException(Throwable throwable) {
-		
 	}
 
 	@Override
 	void onCompletion(int numEvents) {
-		
+	}
+	
+	//@Override
+	boolean isReceiving() {
 	}
 	
 	private log(msg) {

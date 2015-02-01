@@ -11,7 +11,11 @@ trait CompositeCompute {
 	}
 
 	DockerAppliance appliance(String name, Closure configBlock) {
-		computes.getObject(name, DockerAppliance, configBlock) as DockerAppliance
+		DockerAppliance app = computes.getObject(name, DockerAppliance, configBlock) as DockerAppliance
+		if (app.withTasks) {
+			app.createTasks()
+		}
+		app
 	}
 
 	DockerAppliance appliance(String name) {
@@ -19,7 +23,11 @@ trait CompositeCompute {
 	}
 
 	DockerContainer container(String name, Closure configBlock) {
-		computes.getObject(name, DockerContainer, configBlock) as DockerContainer
+		DockerContainer container = computes.getObject(name, DockerContainer, configBlock) as DockerContainer
+		if (container.withTasks) {
+			container.createTasks()
+		}
+		container
 	}
 
 	DockerContainer container(String name) {

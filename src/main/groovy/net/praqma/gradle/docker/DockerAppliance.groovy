@@ -13,30 +13,30 @@ class DockerAppliance extends DockerCompute implements CompositeCompute {
 		super(name, extension)
 		initCompositeCompute(this)
 	}
+	
+	String getTaskNamePrefix() {
+		"appliance${name.capitalize()}"
+	}
 
 	protected void createTasks() {
-		String namePrefix = "appliance${name.capitalize()}"
-
 		project.tasks.with {
-			create(name: "${namePrefix}Info", type: ApplianceInfoTask) {
+			create(name: "${taskNamePrefix}Info", type: ApplianceInfoTask) {
 				group 'Docker'
 				description "Info about the appliance"
 				appliance this
 			}
-			prepareTask = create(name: "${namePrefix}Prepare")
 		}
-		createJobTask("${namePrefix}Start", , ApplianceJob.Start, this) {
+		createJobTask("${taskNamePrefix}Start", , ApplianceJob.Start, this) {
 			description "Start Docker applicance '${name}'"
 			dependsOn prepareTask
 		}
-		createJobTask("${namePrefix}Stop", ApplianceJob.Stop, this) { description "Stop Docker applicance '${name}'" }
-		createJobTask("${namePrefix}Destroy", ApplianceJob.Destroy, this) { description "Destroy Docker applicance '${name}'" }
+		createJobTask("${taskNamePrefix}Stop", ApplianceJob.Stop, this) { description "Stop Docker applicance '${name}'" }
+		createJobTask("${taskNamePrefix}Destroy", ApplianceJob.Destroy, this) { description "Destroy Docker applicance '${name}'" }
 	}
 
 	@Override
 	String toString() {
 		"Appliance(${name})"
 	}
-
 	
 }

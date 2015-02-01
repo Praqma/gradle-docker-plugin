@@ -1,0 +1,11 @@
+apply plugin: 'eclipse'
+apply plugin: 'groovy'
+
+repositories {
+	jcenter()
+}
+
+dependencies {
+	compile "org.codehaus.groovy:groovy-all:${GroovySystem.version}"
+	compile gradleApi()
+}

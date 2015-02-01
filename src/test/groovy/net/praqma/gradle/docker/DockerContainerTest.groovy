@@ -3,18 +3,19 @@ package net.praqma.gradle.docker
 import static org.hamcrest.MatcherAssert.assertThat
 import static org.hamcrest.Matchers.*
 import net.praqma.gradle.docker.jobs.ApplianceJob
-import net.praqma.gradle.docker.jobs.ContainerJob
-import net.praqma.gradle.docker.jobs.Job
 import net.praqma.gradle.docker.jobs.JobScheduler
 import net.praqma.gradle.docker.test.ProjectTestCase
 
 import org.gradle.api.Project
+import org.gradle.api.tasks.bundling.Zip
+import org.gradle.tooling.GradleConnector
+import org.gradle.tooling.ProjectConnection
 import org.junit.Test
 
 class DockerContainerTest extends ProjectTestCase {
 
 	private static String BUSYBOX_IMAGE = 'busybox:latest'
-	
+
 	@Test
 	void testInspectState() {
 		String conName = newName('con')
@@ -111,7 +112,7 @@ class DockerContainerTest extends ProjectTestCase {
 		start w
 		start r
 	}
-	
+
 	@Test
 	void testLogs() {
 		DockerContainer c
@@ -120,11 +121,12 @@ class DockerContainerTest extends ProjectTestCase {
 				image BUSYBOX_IMAGE
 				cmd 'sh', '-c', "echo a"
 			}
-			
 		}
 		start c
+		sleep 500
 		def s = c.logStream().text.trim()
 		assertThat s, is("a")
 		stop c
 	}
+	
 }

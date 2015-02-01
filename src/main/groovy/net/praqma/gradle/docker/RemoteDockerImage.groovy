@@ -1,9 +1,9 @@
 package net.praqma.gradle.docker
 
-import org.apache.commons.io.IOUtils;
-
 import net.praqma.gradle.docker.json.JsonObjectExtractor
 import net.praqma.gradle.utils.ProgressReporter
+
+import org.gradle.api.GradleException
 
 
 class RemoteDockerImage extends DockerObject {
@@ -27,6 +27,11 @@ class RemoteDockerImage extends DockerObject {
 		def maps = []
 		ProgressReporter.evaluate(project, desc) { ProgressReporter reporter ->
 			new JsonObjectExtractor(stream).each { Map m ->
+				if (m['error']) {
+					String error = m['error']
+					println error
+					throw new GradleException(error)
+				}
 				if (m['id']) id = m['id']
 				String status = m['status']
 				String progress = m['progress']

@@ -2,7 +2,7 @@ package net.praqma.gradle.docker.jobs
 
 import groovy.transform.CompileStatic
 import groovy.transform.TypeCheckingMode
-import net.praqma.gradle.docker.CompositeCompute;
+import net.praqma.gradle.docker.CompositeCompute
 import net.praqma.gradle.docker.DockerAppliance
 import net.praqma.gradle.docker.DockerContainer
 

@@ -5,3 +5,6 @@ gradle.properties
 .gradle
 /build/
 /bin/
+buildSrc/build
+buildSrc/bin
+.groovy

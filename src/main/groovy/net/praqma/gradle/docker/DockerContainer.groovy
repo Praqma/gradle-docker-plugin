@@ -1,7 +1,7 @@
 package net.praqma.gradle.docker
 
-import groovy.transform.CompileStatic
 import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
 import groovy.transform.Immutable
 import groovy.transform.TypeCheckingMode
 import net.praqma.docker.connection.EventName
@@ -45,17 +45,23 @@ class DockerContainer extends DockerCompute {
 	@CompileDynamic
 	DockerContainer(String name, CompositeCompute parent) {
 		super(name, parent)
-		eventRegistry = new EnumMap<EventName, List<Closure>>(EventName).withDefault { []}
+		eventRegistry = new EnumMap<EventName, List<Closure>>(EventName).withDefault {
+			[]
+		}
 		connection.updateCache(this)
 		this.image = new RemoteDockerImage(this)
-		prepareTask = project.tasks.create(name: taskName('Prepare'))
 		if (parent.metaClass.hasProperty("prepareTask")) {
 			parent.prepareTask.dependsOn prepareTask
 		}
 	}
 
+	@Override
+	public String getTaskNamePrefix() {
+		"container${fullName.capitalize()}"
+	}
+
 	String taskName(String task) {
-		"container${fullName.capitalize()}${task.capitalize()}"
+		"${taskNamePrefix}${task.capitalize()}"
 	}
 
 	void setLocalImage(String liName) {
@@ -78,14 +84,14 @@ class DockerContainer extends DockerCompute {
 		String[] parts = image.split(':')
 		switch (parts.length) {
 			case 1:
-				this.image.repository = parts[0]
-				break
+			this.image.repository = parts[0]
+			break
 			case 2:
-				this.image.repository = parts[0]
-				this.image.tag = parts[1]
-				break
+			this.image.repository = parts[0]
+			this.image.tag = parts[1]
+			break
 			default:
-				throw new GradleException()
+			throw new GradleException()
 		}
 	}
 
@@ -139,11 +145,11 @@ class DockerContainer extends DockerCompute {
 		if (containerId == null) {
 			logger.info "Creating Docker container from ${imageId}"
 			CreateContainerCmd c = dockerClient.createContainerCmd(imageId)
-					.withName(fullName)
-					.withVolumes(volumes.collect {
-						new Volume(it as String)
-					} as Volume[])
-					.withEnv(map2StringArray(env))
+			.withName(fullName)
+			.withVolumes(volumes.collect {
+				new Volume(it as String)
+			} as Volume[])
+			.withEnv(map2StringArray(env))
 			if (cmd != null) {
 				c.withCmd(cmd)
 			}
@@ -167,9 +173,9 @@ class DockerContainer extends DockerCompute {
 		}
 
 		StartContainerCmd cmd = dockerClient.startContainerCmd(containerId)
-				.withLinks(links.collect { LinkInfo li -> new Link(calculateFullName(li.name), li.alias) } as Link[])
-				.withPortBindings(ports)
-				.withBinds(volumeBinds.collect { VolumeBind vb -> new Bind(vb.hostPath, new Volume(vb.volume)) } as Bind[])
+		.withLinks(links.collect { LinkInfo li -> new Link(calculateFullName(li.name), li.alias) } as Link[])
+		.withPortBindings(ports)
+		.withBinds(volumeBinds.collect { VolumeBind vb -> new Bind(vb.hostPath, new Volume(vb.volume)) } as Bind[])
 		// TODO set more volumes
 		if (this.volumesFrom.size() > 0) {
 			cmd.withVolumesFrom(calculateFullName(volumesFrom.first()))
@@ -201,7 +207,11 @@ class DockerContainer extends DockerCompute {
 	}
 
 	def remove() {
-		dockerClient.removeContainerCmd(fullName).exec()
+		try {
+			dockerClient.removeContainerCmd(fullName).exec()
+		} catch (NotFoundException e) {
+			// Ignore, container doesn't exist on host
+		}
 	}
 
 	def stop() {
@@ -267,9 +277,9 @@ class DockerContainer extends DockerCompute {
 		eventRegistry[e].each { it(this) }
 		switch (e) {
 			case EventName.destroy:
-				assert this.@cid == event.id
-				this.@cid = null
-				break
+			assert this.@cid == event.id
+			this.@cid = null
+			break
 		}
 	}
 

@@ -1,9 +1,11 @@
 package net.praqma.docker.connection
 
 import groovy.transform.CompileStatic
+import groovy.transform.CompileDynamic
 import groovy.transform.ToString
 
 import org.gradle.api.GradleException
+import org.gradle.api.Project
 
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.core.DockerClientBuilder
@@ -17,12 +19,12 @@ class HostSpec {
 	private URI _uri
 	private File _certPath
 
-	String version = '1.15'
+	String version = '1.16'
 
 	def uri(String s) {
-		uri = URI.create(s)
+		_uri = URI.create(s)
 	}
-	
+
 	def certPath(File certPath) {
 		this._certPath = certPath
 	}
@@ -46,7 +48,7 @@ class HostSpec {
 			if (s.startsWith('tcp://')) {
 				s = 'https' + s[3..-1]
 			}
-			this._uri = URI.create(s)
+			uri(s)
 		}
 		this._uri
 	}
@@ -70,9 +72,17 @@ class HostSpec {
 				//				.withUsername("dockeruser")
 				//				.withPassword("ilovedocker")
 				//				.withEmail("dockeruser@github.com")
-				// .withServerAddress("https://index.docker.io/v1/")
+				.withServerAddress("https://xxxxindex.docker.io/v1/")
 				.withDockerCertPath(certPath.path)
 		configBuilder
+	}
+
+	@CompileDynamic
+	void initFromProjectProperties(Map<String,String> properies) {
+		properties.dockerCertPath?.with {
+			this._certPath = new File(it)
+		}
+		properties.dockerHost?.with { uri(it) }
 	}
 
 	DockerClient createClient() {
@@ -80,5 +90,4 @@ class HostSpec {
 		addToClientConfigBuilder(configBuilder)
 		DockerClientBuilder.getInstance(configBuilder.build()).build()
 	}
-
 }

@@ -8,7 +8,7 @@ import org.junit.Test
 class JobSchedulerTest {
 
 	@Test
-	public void testFactory() {
+	void testFactory() {
 		JobScheduler factory = new JobScheduler()
 		Job j1 = factory.newJob(TestFactoryJob, 1, "a", "b")
 		Job j2 = factory.newJob(TestFactoryJob, 1, "a", "b")
@@ -16,7 +16,7 @@ class JobSchedulerTest {
 	}
 
 	@Test
-	public void testExecutionOrder() {
+	void testExecutionOrder() {
 		def scheduler = new JobScheduler()
 		Job job1 = scheduler.newJob(TestJob, 1)
 		scheduler.launch(job1)
@@ -24,11 +24,19 @@ class JobSchedulerTest {
 	}
 
 	@Test
-	public void testRetry() {
+	void testRetry() {
 		def scheduler = new JobScheduler()
 		Job job = scheduler.newJob(TestRetryJob)
 		scheduler.launch(job)
 		assert job.get() == 0
+	}
+	
+	@Test
+	void testCyclicJobDependency() {
+		JobScheduler scheduler = new JobScheduler()
+		Job j1 = scheduler.newJob(TestFactoryJob, 1)
+		Job j2 = scheduler.newJob(TestFactoryJob, 2)
+		
 	}
 }
 

@@ -21,7 +21,10 @@ abstract class DockerCompute extends DockerDslObject {
 	DockerCompute(String name, CompositeCompute parent) {
 		super(name, parent)
 		assert parent != null
+		prepareTask = project.tasks.create(name: "${taskNamePrefix}Prepare")
 	}
+	
+	abstract String getTaskNamePrefix()
 
 	void whenStarted(action) {
 		startedActions << action
@@ -41,12 +44,6 @@ abstract class DockerCompute extends DockerDslObject {
 
 	void trigger(List actions) {
 		actions.each { it() }
-	}
-
-	protected void postProcess() {
-		if (withTasks) {
-			createTasks()
-		}
 	}
 
 	protected void createTasks() {}

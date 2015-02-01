@@ -1,21 +1,24 @@
 package net.praqma.gradle.docker
 
-import groovy.transform.CompileStatic
 import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
 import net.praqma.gradle.docker.jobs.BuildImageJob
 import net.praqma.gradle.docker.json.JsonObjectExtractor
 import net.praqma.gradle.utils.ProgressReporter
 
+import org.gradle.api.GradleException
 import org.gradle.api.file.CopySpec
-import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.Sync
 
 @CompileStatic
 class LocalDockerImage extends DockerDslObject implements CopySpec {
 
 	private File directory
 
+	private DockerFile dockerFile
+
 	@Delegate(interfaces = false, includeTypes = CopySpec)
-	final Copy copyTask
+	final Sync copyTask
 
 	String tag = 'latest'
 
@@ -34,9 +37,18 @@ class LocalDockerImage extends DockerDslObject implements CopySpec {
 	@CompileDynamic
 	LocalDockerImage(String name, DockerPluginExtension extension) {
 		super(name, extension)
-		directory = new File(project.buildDir, "dockerBuildImage/${name}/${tag}")
+		directory = new File(project.buildDir, "dockerBuildImage/${name}/${tag}/ctx")
+		directory.mkdirs()
 
-		copyTask = project.tasks.create(name: copyTaskName(name), type: Copy) { into directory } as Copy
+		copyTask = project.tasks.create(name: copyTaskName(name), type: Sync) {  into directory } as Sync
+	}
+
+	void dockerFile(Closure closure) {
+		if (this.@dockerFile == null) {
+			this.@dockerFile = new DockerFile(new File(directory.parent, 'Dockerfile'), copyTask)
+		}
+		closure.delegate = this.@dockerFile
+		closure(this.@dockerFile)
 	}
 
 	void tag(String tag) {
@@ -67,6 +79,9 @@ class LocalDockerImage extends DockerDslObject implements CopySpec {
 		ProgressReporter.evaluate(project, "Building image ${name}") { ProgressReporter reporter ->
 			jos.each {
 				String s
+				if (it['error']) {
+					throw new GradleException("Build image ${nt}: ${it['error']}")
+				}
 				if (it['stream']) {
 					s = it['stream'].toString().trim()
 					if (s.startsWith(prefix)) {
@@ -87,5 +102,5 @@ class LocalDockerImage extends DockerDslObject implements CopySpec {
 		assert id != null
 		id
 	}
-
+	
 }
