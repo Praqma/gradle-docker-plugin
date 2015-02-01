@@ -120,11 +120,11 @@ public class DockerFile {
 				case File:
 					File file = src as File
 					String s = file.absolutePath
-					copyToCtx(src, DigestUtils.sha1Hex(s))
+					srcString = copyToCtx(src, DigestUtils.sha1Hex(s))
 					break
 				case Task:
 					Task task = src as Task
-					copyToCtx(src, task.name)
+					srcString = copyToCtx(src, task.name)
 					break
 				case String:
 				case GString:
@@ -135,13 +135,15 @@ public class DockerFile {
 					throw new GradleException("Can't use ${src} as source for file")
 					break
 			}
+			assert srcString != null
 			srcString
 		}.join(' ')
 		s
 	}
 	
 	@CompileStatic(TypeCheckingMode.SKIP)
-	private String copyToCtx(Osrc, String name) {
+	private String copyToCtx(src, String name) {
+		assert name != null
 		copySpec.into('__tmp__') {
 			from(src)
 			rename { name }
