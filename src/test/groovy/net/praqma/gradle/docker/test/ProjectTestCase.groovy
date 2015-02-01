@@ -73,10 +73,11 @@ class ProjectTestCase {
 	}
 
 	void waitFor(int ms, Closure cond) {
+		int delay = 0
 		while (!cond()) {
-			if (ms > 0) {
+ 			if (delay < ms) {
 				sleep 50
-				ms -= 50
+				delay += 50
 			} else {
 				assert cond() : "Condition not reached in $ms milleseconds"
 			}
