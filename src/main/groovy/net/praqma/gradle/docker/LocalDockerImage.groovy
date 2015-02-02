@@ -13,6 +13,8 @@ import org.gradle.api.tasks.Sync
 @CompileStatic
 class LocalDockerImage extends DockerDslObject implements CopySpec {
 
+	LocalDockerImage baseImage
+	
 	private File directory
 
 	private DockerFile dockerFile
@@ -101,6 +103,17 @@ class LocalDockerImage extends DockerDslObject implements CopySpec {
 		}
 		assert id != null
 		id
+	}
+	
+	@CompileDynamic
+	void postProcess() {
+		String baseImageName = dockerFile?.fromImage
+		if (baseImageName) {
+			baseImage = dockerExtension.getImage(baseImageName)
+			if (baseImage) {
+				copyTask.dependsOn baseImage.copyTask
+			}
+		}
 	}
 	
 }

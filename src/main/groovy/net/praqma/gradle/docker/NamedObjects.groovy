@@ -36,6 +36,10 @@ class NamedObjects<T extends NamedObjectsElement> {
 		object
 	}
 
+	T get(String name) {
+		this.objects[name] as T
+	}
+	
 	boolean hasObject(String name) {
 		return null != this.objects[name]
 	}

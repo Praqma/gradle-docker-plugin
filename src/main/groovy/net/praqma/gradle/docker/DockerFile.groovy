@@ -12,6 +12,8 @@ import org.gradle.api.file.FileCollection
 @CompileStatic
 public class DockerFile {
 
+	String fromImage
+	
 	private File file
 
 	private CopySpec copySpec
@@ -26,6 +28,7 @@ public class DockerFile {
 
 	DockerFile fromImage(String image, String tag = null) {
 		String line = tag == null ? image : "${image}:${tag}"
+		fromImage = line
 		appendLine 'FROM', line
 		this
 	}

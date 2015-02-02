@@ -60,9 +60,13 @@ class DockerPluginExtension extends DockerDslObject implements CompositeCompute 
 	LocalDockerImage image(String name, Closure configBlock = null) {
 		images.getObject(name, LocalDockerImage, configBlock)
 	}
+	
+	LocalDockerImage getImage(String name) {
+		images.get(name)
+	}
 
 	void postProcess() {
-		//images.each { LocalDockerImage img -> img.postProcess() }
+		images.each { LocalDockerImage img -> img.postProcess() }
 		//traverse(DockerCompute) { DockerCompute c -> c.postProcess() }
 	}
 

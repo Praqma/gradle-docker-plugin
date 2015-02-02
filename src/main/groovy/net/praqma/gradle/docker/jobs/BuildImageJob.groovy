@@ -1,13 +1,18 @@
 package net.praqma.gradle.docker.jobs
 
+import groovy.transform.CompileStatic
 import net.praqma.gradle.docker.LocalDockerImage
 
+@CompileStatic
 class BuildImageJob extends Job {
 
 	private LocalDockerImage image
 
 	void init(LocalDockerImage image) {
 		this.image = image
+		if (image.baseImage) {
+			preJob(BuildImageJob, image.baseImage)
+		}
 	}
 
 	@Override

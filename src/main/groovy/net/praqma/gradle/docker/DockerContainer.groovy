@@ -50,7 +50,7 @@ class DockerContainer extends DockerCompute {
 		}
 		connection.updateCache(this)
 		this.image = new RemoteDockerImage(this)
-		if (parent.metaClass.hasProperty("prepareTask")) {
+		if (parent.hasProperty("prepareTask")) {
 			parent.prepareTask.dependsOn prepareTask
 		}
 	}
