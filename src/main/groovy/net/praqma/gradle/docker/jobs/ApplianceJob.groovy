@@ -59,7 +59,7 @@ abstract class ApplianceJob extends Job {
 
 		void init(DockerAppliance appliance) {
 			super.init(appliance);
-			appliance.containers.each { DockerContainer c ->
+			appliance.traverse(DockerContainer) { DockerContainer c ->
 				Job removeJob = preJob(ContainerJob.Remove, c)
 				removeJob.preJob(ContainerJob.Kill, c)
 			}
