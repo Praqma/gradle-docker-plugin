@@ -12,7 +12,7 @@ repositories {
 targetCompatibility = sourceCompatibility = '1.7'
 
 group = 'net.praqma.gradle'
-version = '0.3.1'
+version = '0.4-SNAPSHOT'
 description = 'Gradle plugin to orchestrate Docker containers'
 
 ext {
@@ -30,7 +30,7 @@ dependencies {
 	testCompile 'com.google.guava:guava:18+'
 	testCompile 'junit:junit:4.11'
 	testCompile 'org.hamcrest:hamcrest-library:1.3'
-	testCompile 'org.spockframework:spock-core:0.7-groovy-2.0'
+	// testCompile 'org.spockframework:spock-core:0.7-groovy-2.0'
 	// testCompile "org.spockframework:spock-core:1.0-groovy-2.3-SNAPSHOT"
 	
 	compile gradleApi()
@@ -90,8 +90,14 @@ bintray {
 	}
 }
 
+task allIntegTests {
+	description "Run all integrations tests"
+	group 'verify'
+}
+
 def geh = new net.praqma.docker.execution.GradleExecutionHelper(project, 'integTest')
 file('src/integtest').eachFile { File d ->
-	geh.createTask(d.name, d, 'validate', 'Docker Plugin Integration Test')
+	def test = geh.createTask(d.name, d, 'validate', 'Docker Plugin Integration Test')
+	allIntegTests.dependsOn test
 }
 

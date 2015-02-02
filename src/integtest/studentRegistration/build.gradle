@@ -1,14 +1,68 @@
+apply plugin: 'war'
 apply plugin: 'net.praqma.docker'
 
-docker {
-	image('tomcat') { dockerFile { fromImage 'tutum/tomcat:7.0' } }
+group = 'com.github.elizabetht'
+version = '1.7-SNAPSHOT'
 
-	image('db') { dockerFile { fromImage 'mysql:5.7' } }
+description = """StudentEnrollmentWithSpring Maven Webapp"""
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+repositories {
+	maven { url "http://repo.jenkins-ci.org/public/" }
+	maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+	maven { url "http://repo.maven.apache.org/maven2" }
+}
+
+dependencies {
+	compile group: 'org.springframework', name: 'spring-webmvc', version:'3.2.4.RELEASE'
+	compile group: 'javax.servlet', name: 'jstl', version:'1.2'
+	compile group: 'mysql', name: 'mysql-connector-java', version:'5.1.21'
+	compile group: 'org.hibernate', name: 'hibernate-validator', version:'4.2.0.Final'
+	compile group: 'org.hibernate', name: 'hibernate-entitymanager', version:'4.1.9.Final'
+	compile group: 'javax.transaction', name: 'jta', version:'1.1'
+	compile group: 'org.springframework', name: 'spring-jdbc', version:'3.2.0.RELEASE'
+	compile group: 'org.springframework', name: 'spring-orm', version:'3.2.0.RELEASE'
+	compile(group: 'org.springframework.data', name: 'spring-data-jpa', version:'1.3.0.RELEASE') { exclude(module: 'spring-aop') }
+	testCompile group: 'junit', name: 'junit', version:'3.8.1'
+	providedCompile group: 'javax.servlet', name: 'servlet-api', version:'2.5'
+}
+
+docker {
+	image('tomcat') {
+		dockerFile {
+			fromImage 'tutum/tomcat:7.0'
+			env 'TOMCAT_PASS', 'kode'
+			add '/tomcat/webapps/student.war', war
+		}
+	}
+
+	/*
+	 image('appdb') {
+	 def f = file('src/main/docker/appdb')
+	 assert f.exists()
+	 from f
+	 dockerFile {
+	 fromImage 'db'
+	 copy '/initdb/', 'initdb.sh'
+	 copy '/initdb/', 'initdb.sql'
+	 run 'sh', '/initdb/initdb.sh'
+	 }
+	 }
+	 */
+	image('db') { from 'src/main/docker/db'  }
 
 	appliance('studentApp') {
-		container ('db') { localImage = 'db' }
-		container ('tomcat') { localImage = 'tomcat' }
 		withTasks = true
+
+		container ('db') { localImage = 'db' }
+
+		container ('tomcat') {
+			localImage = 'tomcat'
+			link 'db', 'database'
+			port 8888, 8080
+		}
 	}
 }
 
