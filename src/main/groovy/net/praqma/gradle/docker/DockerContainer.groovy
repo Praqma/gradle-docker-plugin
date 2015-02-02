@@ -1,5 +1,7 @@
 package net.praqma.gradle.docker
 
+import java.util.concurrent.CountDownLatch;
+
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.Immutable
@@ -28,7 +30,7 @@ import com.github.dockerjava.api.model.Volume
 @CompileStatic
 class DockerContainer extends DockerCompute {
 
-	private String cid = '?'
+	private String cid = '?' // null means no container id (i.e. no backing container). ? means state is unknown
 	private Map<EventName, List<Closure>> eventRegistry
 	private Collection<DockerPortBinding> portBindings = [] as Set
 	private Collection<String> volumes = [] as Set
@@ -36,6 +38,8 @@ class DockerContainer extends DockerCompute {
 	private Collection<String> volumesFrom = [] as Set
 	private Collection<LinkInfo> links = [] as Set
 	private Map<String, String> env = [:]
+
+	private ExecutionResult _executionResult
 
 	final private RemoteDockerImage image
 	String localImage
@@ -45,9 +49,7 @@ class DockerContainer extends DockerCompute {
 	@CompileDynamic
 	DockerContainer(String name, CompositeCompute parent) {
 		super(name, parent)
-		eventRegistry = new EnumMap<EventName, List<Closure>>(EventName).withDefault {
-			[]
-		}
+		eventRegistry = new EnumMap<EventName, List<Closure>>(EventName).withDefault { []}
 		connection.updateCache(this)
 		this.image = new RemoteDockerImage(this)
 		if (parent.hasProperty("prepareTask")) {
@@ -84,14 +86,14 @@ class DockerContainer extends DockerCompute {
 		String[] parts = image.split(':')
 		switch (parts.length) {
 			case 1:
-			this.image.repository = parts[0]
-			break
+				this.image.repository = parts[0]
+				break
 			case 2:
-			this.image.repository = parts[0]
-			this.image.tag = parts[1]
-			break
+				this.image.repository = parts[0]
+				this.image.tag = parts[1]
+				break
 			default:
-			throw new GradleException()
+				throw new GradleException()
 		}
 	}
 
@@ -138,6 +140,10 @@ class DockerContainer extends DockerCompute {
 	Project getProject() {
 		parent.project
 	}
+	
+	ExecutionResult getExecutionResult() {
+		this._executionResult
+	}
 
 	void create(String imageId) {
 		assert imageId != null
@@ -145,11 +151,11 @@ class DockerContainer extends DockerCompute {
 		if (containerId == null) {
 			logger.info "Creating Docker container from ${imageId}"
 			CreateContainerCmd c = dockerClient.createContainerCmd(imageId)
-			.withName(fullName)
-			.withVolumes(volumes.collect {
-				new Volume(it as String)
-			} as Volume[])
-			.withEnv(map2StringArray(env))
+					.withName(fullName)
+					.withVolumes(volumes.collect {
+						new Volume(it as String)
+					} as Volume[])
+					.withEnv(map2StringArray(env))
 			if (cmd != null) {
 				c.withCmd(cmd)
 			}
@@ -173,9 +179,9 @@ class DockerContainer extends DockerCompute {
 		}
 
 		StartContainerCmd cmd = dockerClient.startContainerCmd(containerId)
-		.withLinks(links.collect { LinkInfo li -> new Link(calculateFullName(li.name), li.alias) } as Link[])
-		.withPortBindings(ports)
-		.withBinds(volumeBinds.collect { VolumeBind vb -> new Bind(vb.hostPath, new Volume(vb.volume)) } as Bind[])
+				.withLinks(links.collect { LinkInfo li -> new Link(calculateFullName(li.name), li.alias) } as Link[])
+				.withPortBindings(ports)
+				.withBinds(volumeBinds.collect { VolumeBind vb -> new Bind(vb.hostPath, new Volume(vb.volume)) } as Bind[])
 		// TODO set more volumes
 		if (this.volumesFrom.size() > 0) {
 			cmd.withVolumesFrom(calculateFullName(volumesFrom.first()))
@@ -186,6 +192,14 @@ class DockerContainer extends DockerCompute {
 			// container already started
 			// TODO make sure it is configured as desired
 		}
+	}
+
+	ExecutionResult waitUntilFinish() {
+		CountDownLatch latch = new CountDownLatch(1)
+		whenFinish { latch.countDown() }
+		latch.await()
+		assert _executionResult != null
+		executionResult 
 	}
 
 	InputStream logStream(LogSpec logSpec) {
@@ -271,20 +285,43 @@ class DockerContainer extends DockerCompute {
 		eventRegistry[event] << action
 	}
 
+	void whenFinish(Closure closure) {
+		when (EventName.die, closure)
+		when (EventName.stop, closure)
+		ContainerInspect ci = inspect()
+		if (ci?.state == State.STOPPED) {
+			assert executionResult != null
+			executionResult.updateInspect(ci)
+			closure()
+		}
+	}
+
 	void dispatchEvent(Event event) {
 		EventName e = event.status as EventName
+		switch (e) {
+			case EventName.die:
+				_executionResult = new ExecutionResult(this, event)
+				break
+		}
 		logger.info "Dispatching ${e} for ${this}"
-		eventRegistry[e].each { it(this) }
+		eventRegistry[e].each {
+			try {
+				it(this)
+			} catch (Exception ex) {
+				ex.printStackTrace()
+			}
+		}
 		switch (e) {
 			case EventName.destroy:
-			assert this.@cid == event.id
-			this.@cid = null
-			break
+				assert this.@cid == event.id
+				this.@cid = null
+				break
 		}
 	}
 
 	void updateFrom(InspectContainerResponse icr) {
 		this.@cid = icr?.id
+		connection.updateCache(this, this.@cid)
 	}
 }
 
@@ -303,3 +340,32 @@ class VolumeBind {
 	String hostPath
 	String volume
 }
+
+class ExecutionResult {
+
+	private Event event
+	private DockerContainer container
+	private ContainerInspect _inspect
+	
+	ExecutionResult(DockerContainer container, Event event) {
+		this.event = event
+		this.container = container
+	}
+	
+	int getExitCode() {
+		inspect.exitCode
+	}
+	
+	void updateInspect(ContainerInspect ci) {
+		assert ci.state == State.STOPPED
+		_inspect = ci
+	}
+	
+	private ContainerInspect getInspect() {
+		if (_inspect == null) {
+			_inspect = container.inspect()
+		} 
+		_inspect
+	}
+}
+

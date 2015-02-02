@@ -7,9 +7,6 @@ import net.praqma.gradle.docker.jobs.JobScheduler
 import net.praqma.gradle.docker.test.ProjectTestCase
 
 import org.gradle.api.Project
-import org.gradle.api.tasks.bundling.Zip
-import org.gradle.tooling.GradleConnector
-import org.gradle.tooling.ProjectConnection
 import org.junit.Test
 
 class DockerContainerTest extends ProjectTestCase {
@@ -128,5 +125,54 @@ class DockerContainerTest extends ProjectTestCase {
 		assertThat s, is("a")
 		stop c
 	}
-	
+
+	@Test
+	void testWhenFinish() {
+		DockerContainer c1, c2
+		projectWithDocker {
+			c1 = container('c1') {
+				image BUSYBOX_IMAGE
+				cmd 'sh', '-c', "exit 0"
+			}
+			c2 = container('c2') {
+				image BUSYBOX_IMAGE
+				cmd 'sh', '-c', "exit 0"
+				persistent = true
+			}
+		}
+		def flag1, flag2
+		start c1
+		start c2
+		c1.whenFinish { flag1 = true }
+		c2.whenFinish { flag2 = true  }
+
+		waitFor (1000) {
+			flag1 == true && flag2 == true
+		}
+
+		assertThat flag1, is(true)
+		assertThat flag2, is(true)
+	}
+
+	@Test
+	void testWaitUntilFinish() {
+		DockerContainer c1, c2
+		projectWithDocker {
+			c1 = container('c1') {
+				image BUSYBOX_IMAGE
+				cmd 'sh', '-c', "sleep 1 ; exit 1"
+			}
+			c2 = container('c2') {
+				image BUSYBOX_IMAGE
+				cmd 'sh', '-c', "exit 2"
+			}
+		}
+		start c1
+		start c2
+		ExecutionResult result1 = c1.waitUntilFinish()
+		assertThat result1.exitCode, is(1)
+
+		ExecutionResult result2 = c2.waitUntilFinish()
+		assertThat result2.exitCode, is(2)
+	}
 }

@@ -137,7 +137,7 @@ class HostConnection implements EventCallback {
 	private log(msg) {
 		logger.info "${getClass().simpleName}: ${msg}"
 	}
-
+	
 }
 
 @Immutable

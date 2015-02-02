@@ -30,6 +30,10 @@ class ContainerInspect {
 		if (s.running) return State.RUNNING
 		return State.STOPPED
 	}
+	
+	int getExitCode() {
+		icr.state.exitCode
+	}
 
 	@Immutable
 	static class Volume {

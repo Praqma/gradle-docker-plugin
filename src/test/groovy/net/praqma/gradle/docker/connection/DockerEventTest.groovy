@@ -17,13 +17,16 @@ class DockerEventTest extends ProjectTestCase{
 			String name = newName('con')
 			c = container (name) {
 				image 'busybox:latest'
-				cmd 'sleep', 'infinity'
+				cmd 'sleep', '0.001'
 				
 				when ('start') { 
 					events << 'start'
 				}
 				when ('die') { 
 					events << 'die' 
+				}
+				when ('stop') {
+					events << 'stop'
 				}
 			}
 			
@@ -34,6 +37,5 @@ class DockerEventTest extends ProjectTestCase{
 		}
 		assertThat events, is(['start', 'die'])
 		stop c
-		
 	}
 }

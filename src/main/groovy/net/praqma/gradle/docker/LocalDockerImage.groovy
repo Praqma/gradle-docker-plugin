@@ -115,5 +115,4 @@ class LocalDockerImage extends DockerDslObject implements CopySpec {
 			}
 		}
 	}
-	
 }
