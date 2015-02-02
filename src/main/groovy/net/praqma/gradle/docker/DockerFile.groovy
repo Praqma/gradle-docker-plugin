@@ -8,22 +8,28 @@ import org.gradle.api.GradleException
 import org.gradle.api.Task
 import org.gradle.api.file.CopySpec
 import org.gradle.api.file.FileCollection
+import org.gradle.api.tasks.AbstractCopyTask
 
 @CompileStatic
 public class DockerFile {
 
 	String fromImage
-	
-	private File file
 
-	private CopySpec copySpec
+	private StringBuffer buffer
+
+	private AbstractCopyTask copyTask
 
 	@CompileStatic(TypeCheckingMode.SKIP)
-	DockerFile(File file, CopySpec copySpec) {
-		this.file = file
-		this.copySpec = copySpec
-		copySpec.from file
-		file.text = ''
+	DockerFile(AbstractCopyTask copyTask) {
+		this.copyTask = copyTask
+		this.buffer = "" << ""
+		copyTask.doLast {
+			new File(destinationDir, 'Dockerfile').text = text
+		}
+	}
+
+	String getText() {
+		buffer.toString()
 	}
 
 	DockerFile fromImage(String image, String tag = null) {
@@ -78,7 +84,6 @@ public class DockerFile {
 		this
 	}
 
-
 	/**
 	 * Note that dest is first argument. In DockerFile it is the last arguments.
 	 *  
@@ -104,11 +109,11 @@ public class DockerFile {
 	}
 
 	private void appendLine(String instruction, String line) {
-		file << instruction << " " << line << "\n"
+		buffer << instruction << " " << line << "\n"
 	}
 
 	private void appendLine(String instruction, String ...line) {
-		file << instruction << " " << toJsonArray(line) << "\n"
+		buffer << instruction << " " << toJsonArray(line) << "\n"
 	}
 
 	private String toJsonArray(String[] ary) {
@@ -143,11 +148,11 @@ public class DockerFile {
 		}.join(' ')
 		s
 	}
-	
+
 	@CompileStatic(TypeCheckingMode.SKIP)
 	private String copyToCtx(src, String name) {
 		assert name != null
-		copySpec.into('__tmp__') {
+		copyTask.into('__tmp__') {
 			from(src)
 			rename { name }
 		}

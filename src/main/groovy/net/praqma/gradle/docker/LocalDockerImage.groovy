@@ -47,7 +47,7 @@ class LocalDockerImage extends DockerDslObject implements CopySpec {
 
 	void dockerFile(Closure closure) {
 		if (this.@dockerFile == null) {
-			this.@dockerFile = new DockerFile(new File(directory.parent, 'Dockerfile'), copyTask)
+			this.@dockerFile = new DockerFile(copyTask)
 		}
 		closure.delegate = this.@dockerFile
 		closure(this.@dockerFile)
