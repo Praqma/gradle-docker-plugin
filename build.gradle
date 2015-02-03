@@ -12,7 +12,7 @@ repositories {
 targetCompatibility = sourceCompatibility = '1.7'
 
 group = 'net.praqma.gradle'
-version = '0.5-SNAPSHOT'
+version = '0.5'
 description = 'Gradle plugin to orchestrate Docker containers'
 
 ext {
