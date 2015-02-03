@@ -20,6 +20,7 @@ class ApplianceJobTest extends ProjectTestCase {
 				container ('c2') {
 					image BUSYBOX_IMAGE
 					cmd 'sleep', '10000'
+					persistent = true
 				}
 			}
 		}
@@ -27,6 +28,28 @@ class ApplianceJobTest extends ProjectTestCase {
 		// TODO assert the two containers are running
 		JobScheduler.execute(ApplianceJob.Destroy, app)
 		// TODO assert the two containers are destroyed
+	}
+	
+	@Test
+	void testApplianceStop() {
+		DockerAppliance app
+		projectWithDocker {
+			app = appliance ('test') {
+				container ('c1') {
+					image BUSYBOX_IMAGE
+					cmd 'sleep', '10000'
+				}
+				container ('c2') {
+					image BUSYBOX_IMAGE
+					cmd 'sleep', '10000'
+					persistent = true
+				}
+			}
+		}
+		JobScheduler.execute(ApplianceJob.Start, app)
+		// TODO assert the two containers are running
+		JobScheduler.execute(ApplianceJob.Stop, app)
+		// TODO assert the two containers are stopped
 	}
 }
 

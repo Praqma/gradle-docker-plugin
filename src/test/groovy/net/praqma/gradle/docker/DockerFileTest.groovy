@@ -9,7 +9,8 @@ class DockerFileTest extends ProjectTestCase {
 
 	@Test
 	void testDockerFileInstructions() {
-		DockerFile dockerFile = new DockerFile(newRootProject().tasks.create(name: 'dummy',type: Copy))
+		def p = newRootProject()
+		DockerFile dockerFile = new DockerFile(p, p.tasks.create(name: 'dummy',type: Copy))
 
 		dockerFile
 				.fromImage('ubuntu', 'latest')

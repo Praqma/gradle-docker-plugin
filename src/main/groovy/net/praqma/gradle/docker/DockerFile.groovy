@@ -2,11 +2,12 @@ package net.praqma.gradle.docker
 
 import groovy.transform.CompileStatic
 import groovy.transform.TypeCheckingMode
+import net.praqma.gradle.docker.tasks.CreateDockerFileTask
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.gradle.api.GradleException
+import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.file.CopySpec
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.AbstractCopyTask
 
@@ -15,62 +16,66 @@ public class DockerFile {
 
 	String fromImage
 
-	private StringBuffer buffer
 
-	private AbstractCopyTask copyTask
+	private final Project project
+
+	private final AbstractCopyTask copyTask
+
+	private final CreateDockerFileTask createDockerFileTask
 
 	@CompileStatic(TypeCheckingMode.SKIP)
-	DockerFile(AbstractCopyTask copyTask) {
+	DockerFile(Project project, AbstractCopyTask copyTask) {
+		this.project = project
 		this.copyTask = copyTask
-		this.buffer = "" << ""
-		copyTask.doLast {
-			new File(destinationDir, 'Dockerfile').text = text
-		}
+		File dockerFile = new File(project.buildDir, "tmp/${copyTask.name}/Dockerfile")
+		this.createDockerFileTask = project.tasks.create(name: "dockerfileFor${copyTask.name.capitalize()}", type: CreateDockerFileTask) { file = dockerFile }
+		copyTask.from (dockerFile)
+		copyTask.dependsOn this.createDockerFileTask
 	}
 
 	String getText() {
-		buffer.toString()
+		return createDockerFileTask.text
 	}
-
+	
 	DockerFile fromImage(String image, String tag = null) {
 		String line = tag == null ? image : "${image}:${tag}"
 		fromImage = line
-		appendLine 'FROM', line
+		createDockerFileTask.appendLine 'FROM', line
 		this
 	}
 
 	DockerFile maintainer(String maintainer) {
-		appendLine 'MAINTAINER', maintainer
+		createDockerFileTask.appendLine 'MAINTAINER', maintainer
 		this
 	}
 
 	DockerFile run(String command) {
-		appendLine 'RUN', command
+		createDockerFileTask.appendLine 'RUN', command
 		this
 	}
 
 	DockerFile run(String ...command) {
-		appendLine 'RUN', command
+		createDockerFileTask.appendLine 'RUN', command
 		this
 	}
 
 	DockerFile cmd(String cmd) {
-		appendLine 'CMD', cmd
+		createDockerFileTask.appendLine 'CMD', cmd
 		this
 	}
 
 	DockerFile cmd(String ...cmd) {
-		appendLine 'CMD', cmd
+		createDockerFileTask.appendLine 'CMD', cmd
 		this
 	}
 
 	DockerFile expose(int port) {
-		appendLine 'EXPOSE', port as String
+		createDockerFileTask.appendLine 'EXPOSE', port as String
 		this
 	}
 
 	DockerFile env(String key, String value) {
-		appendLine 'ENV', "${key} ${value}"
+		createDockerFileTask.appendLine 'ENV', "${key} ${value}"
 		this
 	}
 	// TODO add env method with map arg
@@ -80,7 +85,7 @@ public class DockerFile {
 	 *  
 	 */
 	DockerFile add(String dest, Object ...src) {
-		appendLine 'ADD', "${fileSources(true, src)} ${dest}"
+		createDockerFileTask.appendLine 'ADD', "${fileSources(true, src)} ${dest}"
 		this
 	}
 
@@ -89,35 +94,23 @@ public class DockerFile {
 	 *  
 	 */
 	DockerFile copy(String dest, Object ...src) {
-		appendLine 'COPY', "${fileSources(false, src)} ${dest}"
+		createDockerFileTask.appendLine 'COPY', "${fileSources(false, src)} ${dest}"
 		this
 	}
 
 	DockerFile volume(String ...volumes) {
-		appendLine 'VOLUME', volumes
+		createDockerFileTask.appendLine 'VOLUME', volumes
 		this
 	}
 
 	DockerFile user(String user) {
-		appendLine 'USER', user
+		createDockerFileTask.appendLine 'USER', user
 		this
 	}
 
 	DockerFile workdir(String dir) {
-		appendLine 'WORKDIR', dir
+		createDockerFileTask.appendLine 'WORKDIR', dir
 		this
-	}
-
-	private void appendLine(String instruction, String line) {
-		buffer << instruction << " " << line << "\n"
-	}
-
-	private void appendLine(String instruction, String ...line) {
-		buffer << instruction << " " << toJsonArray(line) << "\n"
-	}
-
-	private String toJsonArray(String[] ary) {
-		new groovy.json.JsonBuilder(ary).toString()
 	}
 
 	@CompileStatic(TypeCheckingMode.SKIP)
@@ -158,4 +151,5 @@ public class DockerFile {
 		}
 		"__tmp__/${name}"
 	}
+
 }
