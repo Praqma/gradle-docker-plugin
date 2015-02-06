@@ -60,7 +60,7 @@ class HostConnection implements EventCallback {
 		InspectContainerResponse icr
 		try {
 			if (remove) {
-				dockerClient.removeContainerCmd(con.fullName ).exec()
+				dockerClient.removeContainerCmd(con.fullName ).withForce(true).exec()
 			} else {
 				icr = dockerClient.inspectContainerCmd(con.fullName).exec()
 			}

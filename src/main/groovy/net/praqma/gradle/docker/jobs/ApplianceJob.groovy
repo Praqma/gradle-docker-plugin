@@ -61,7 +61,7 @@ abstract class ApplianceJob extends Job {
 			super.init(appliance);
 			appliance.traverse(DockerContainer) { DockerContainer c ->
 				Job removeJob = preJob(ContainerJob.Remove, c)
-				removeJob.preJob(ContainerJob.Kill, c)
+				removeJob.preJob(ContainerJob.Stop, c)
 			}
 		}
 

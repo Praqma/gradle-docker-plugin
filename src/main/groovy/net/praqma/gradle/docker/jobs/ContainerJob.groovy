@@ -89,18 +89,6 @@ abstract class ContainerJob extends Job {
 		}
 	}
 
-
-	static class Kill extends ContainerJob {
-
-		@Override
-		public Answer doExecute() {
-			logInfo "killing, id: ${container.fullName}"
-			container.kill()
-			logInfo 'killed'
-			Answer.success()
-		}
-	}
-
 	static class Remove extends ContainerJob {
 
 		@Override

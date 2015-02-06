@@ -1,16 +1,18 @@
 package net.praqma.gradle.docker
 
-import java.util.concurrent.CountDownLatch;
-
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.Immutable
 import groovy.transform.TypeCheckingMode
+
+import java.util.concurrent.CountDownLatch
+
 import net.praqma.docker.connection.EventName
-import net.praqma.gradle.docker.jobs.ContainerJob
+import net.praqma.gradle.docker.jobs.ContainerJob;
 
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.Task
 
 import com.github.dockerjava.api.NotFoundException
 import com.github.dockerjava.api.NotModifiedException
@@ -46,9 +48,13 @@ class DockerContainer extends DockerCompute {
 	boolean persistent = false
 	String[] cmd
 
+	@Lazy Task createTask = createCreateTask()
+
+	int stopTimeoutSeconds = 5
+
 	@CompileDynamic
 	DockerContainer(String name, CompositeCompute parent) {
-		super(name, parent)
+		super(name, parent, ComputeDescriptor.container)
 		eventRegistry = new EnumMap<EventName, List<Closure>>(EventName).withDefault { []}
 		connection.updateCache(this)
 		this.image = new RemoteDockerImage(this)
@@ -140,7 +146,7 @@ class DockerContainer extends DockerCompute {
 	Project getProject() {
 		parent.project
 	}
-	
+
 	ExecutionResult getExecutionResult() {
 		this._executionResult
 	}
@@ -199,7 +205,7 @@ class DockerContainer extends DockerCompute {
 		whenFinish { latch.countDown() }
 		latch.await()
 		assert _executionResult != null
-		executionResult 
+		executionResult
 	}
 
 	InputStream logStream(LogSpec logSpec) {
@@ -216,10 +222,6 @@ class DockerContainer extends DockerCompute {
 		logStream([:])
 	}
 
-	def kill() {
-		dockerClient.killContainerCmd(fullName).exec()
-	}
-
 	def remove() {
 		try {
 			dockerClient.removeContainerCmd(fullName).exec()
@@ -228,9 +230,9 @@ class DockerContainer extends DockerCompute {
 		}
 	}
 
-	def stop() {
+	def stop(int timeout = stopTimeoutSeconds) {
 		try {
-			dockerClient.stopContainerCmd(containerId).exec()
+			dockerClient.stopContainerCmd(containerId).withTimeout(timeout).exec()
 		} catch (NotModifiedException e) {
 			// Container already stopped. Ignore.
 		}
@@ -255,11 +257,8 @@ class DockerContainer extends DockerCompute {
 
 	@CompileStatic(TypeCheckingMode.SKIP)
 	protected void createTasks() {
-		createJobTask(taskName('Start'), ContainerJob.Start, this) { dependsOn prepareTask }
-		createJobTask(taskName('Stop'), ContainerJob.Stop, this)
-		createJobTask(taskName('Kill'), ContainerJob.Kill, this)
-		createJobTask(taskName('Remove'), ContainerJob.Remove, this)
-		createJobTask(taskName('Create'), ContainerJob.Create, this) { dependsOn prepareTask }
+		super.createTasks()
+		createTask // lazy created
 	}
 
 	@CompileStatic(TypeCheckingMode.SKIP)
@@ -323,6 +322,11 @@ class DockerContainer extends DockerCompute {
 		this.@cid = icr?.id
 		connection.updateCache(this, this.@cid)
 	}
+
+	@CompileDynamic
+	private Task createCreateTask() {
+		createJobTask(taskName('Create'), ContainerJob.Create, this) { dependsOn prepareTask }
+	}
 }
 
 
@@ -346,25 +350,25 @@ class ExecutionResult {
 	private Event event
 	private DockerContainer container
 	private ContainerInspect _inspect
-	
+
 	ExecutionResult(DockerContainer container, Event event) {
 		this.event = event
 		this.container = container
 	}
-	
+
 	int getExitCode() {
 		inspect.exitCode
 	}
-	
+
 	void updateInspect(ContainerInspect ci) {
 		assert ci.state == State.STOPPED
 		_inspect = ci
 	}
-	
+
 	private ContainerInspect getInspect() {
 		if (_inspect == null) {
 			_inspect = container.inspect()
-		} 
+		}
 		_inspect
 	}
 }
