@@ -1,9 +1,9 @@
-plugins { id 'com.jfrog.bintray' version '0.6' }
+//plugins { id 'com.jfrog.bintray' version '0.6' }
 
 apply plugin: 'eclipse'
 apply plugin: 'groovy'
 apply plugin: 'maven-publish'
-apply plugin: 'com.jfrog.bintray'
+//apply plugin: 'com.jfrog.bintray'
 
 repositories {  
 	// mavenLocal()
@@ -32,8 +32,8 @@ dependencies {
 	testCompile 'org.hamcrest:hamcrest-library:1.3'
 	// testCompile 'org.spockframework:spock-core:0.7-groovy-2.0'
 	// testCompile "org.spockframework:spock-core:1.0-groovy-2.3-SNAPSHOT"
-	
 	compile gradleApi()
+
 }
 
 task sourceJar(type: Jar) {
@@ -48,7 +48,6 @@ test {
 		!(f.name in ['bcprov-jdk15-1.46.jar', 'commons-io-1.4.jar'])
 	}
 	dependsOn testClasses
-	exclude 'net/praqma/gradle/integtest/**'
 }
 
 publishing {
@@ -66,6 +65,7 @@ publishing {
 	}
 }
 
+/*
 bintray {
 	// E.g. defined in gradle.properties
 	user = project.hasProperty('bintrayUser')  ? project.bintrayUser   : '<unset>'
@@ -89,7 +89,7 @@ bintray {
 		}
 	}
 }
-
+*/
 task allIntegTests {
 	description "Run all integrations tests"
 	group 'verify'
@@ -100,4 +100,3 @@ file('src/integtest').eachFile { File d ->
 	def test = geh.createTask(d.name, d, 'validate', 'Docker Plugin Integration Test')
 	allIntegTests.dependsOn test
 }
-

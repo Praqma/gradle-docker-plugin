@@ -252,7 +252,11 @@ class DockerContainer extends DockerCompute {
 	}
 
 	private String calculateFullName(String name) {
-		"${owner.name}_${name}"
+		if (owner instanceof DockerAppliance) {
+			"${owner.name}${name.capitalize()}"
+		} else {
+			name
+		}
 	}
 
 	@CompileStatic(TypeCheckingMode.SKIP)

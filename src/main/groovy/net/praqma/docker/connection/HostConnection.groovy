@@ -29,7 +29,7 @@ class HostConnection implements EventCallback {
 
 	private final Cache<String, DockerContainer> idCache
 	private final Cache<String, DockerContainer> nameCache
-	
+
 	@Lazy
 	private DockerClient dockerClient = initDockerClient()
 
@@ -51,11 +51,11 @@ class HostConnection implements EventCallback {
 			idCache.put(containerId, container)
 		}
 	}
-	
+
 	DockerContainer containerNamed(String fullName) {
 		nameCache.getIfPresent(fullName)
 	}
-	
+
 	void updateContainer(DockerContainer con, boolean remove) {
 		InspectContainerResponse icr
 		try {
@@ -87,35 +87,35 @@ class HostConnection implements EventCallback {
 	}
 
 	private DockerClient initDockerClient() {
-		assert hostSpec != null
-		DockerClientConfigBuilder configBuilder = DockerClientConfig.createDefaultConfigBuilder()
-		hostSpec.addToClientConfigBuilder(configBuilder)
-		DockerClient client = DockerClientBuilder.getInstance(configBuilder.build()).build()
-		client
+			assert hostSpec != null
+			DockerClientConfigBuilder configBuilder = DockerClientConfig.createDefaultConfigBuilder()
+			hostSpec.addToClientConfigBuilder(configBuilder)
+			DockerClient client = DockerClientBuilder.getInstance(configBuilder.build()).build()
+			client
 	}
 
 	///////////
 	//// Event handling
 	///////////
-		
+
 	private ExecutorService executorService
-	
+
 	/** container id => (event => List<Action>) */
 	Map<String, Map<?, List>> eventHandlers = [:].withDefault {  }
-	
+
 	void stop() {
 		executorService.shutdown()
 		log "Stop"
 	}
-	
+
 	void register(DockerContainer container, EventName eventName, Closure closure) {
 		eventHandlers[container.containerId][eventName] << closure
 	}
-	
+
 	void remove(DockerContainer container) {
 		eventHandlers.remove(container.containerId)
 	}
-	
+
 	@Override
 	void onEvent(Event event) {
 		log "Revieved event: ${event}"
@@ -129,15 +129,14 @@ class HostConnection implements EventCallback {
 	@Override
 	void onCompletion(int numEvents) {
 	}
-	
-	//@Override
-	boolean isReceiving() {
-	}
-	
+
+	// @Override part of docker-java:0.10.5 api
+	boolean isReceiving() { true }
+
 	private log(msg) {
 		logger.info "${getClass().simpleName}: ${msg}"
 	}
-	
+
 }
 
 @Immutable

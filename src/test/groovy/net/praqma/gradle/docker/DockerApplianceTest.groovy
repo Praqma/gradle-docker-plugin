@@ -26,10 +26,40 @@ class DockerApplianceTest extends ProjectTestCase {
 					cmd 'sleep', 'infinity'
 					//link 'one', 'one'
 				}
-
 			}
 		}
 		start project.docker.appliance('cyclic')
 	}
 
+	@Test
+	void testTaskNames() {
+		Project project = projectWithDocker() {
+			appliance('abc') {
+				withTasks = true
+				container ('ccc') {
+					withTasks = true
+					image BUSYBOX_IMAGE
+				}
+			}
+			container ('toplevel') {
+				withTasks = true
+				image BUSYBOX_IMAGE
+			}
+		}
+
+
+		[
+			'applianceAbcStart',
+			'applianceAbcStop',
+			'applianceAbcDestroy',
+			'containerAbcCccStart',
+			'containerAbcCccStart',
+			'containerAbcCccDestroy',
+			'containerToplevelStart',
+			'containerToplevelStop',
+			'containerToplevelDestroy'
+		].each { String taskname ->
+			project.tasks[taskname] // fails if task doesn't exist
+		}
+	}
 }

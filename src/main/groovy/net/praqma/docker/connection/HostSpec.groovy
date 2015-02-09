@@ -72,7 +72,7 @@ class HostSpec {
 				//				.withUsername("dockeruser")
 				//				.withPassword("ilovedocker")
 				//				.withEmail("dockeruser@github.com")
-				.withServerAddress("https://xxxxindex.docker.io/v1/")
+				//.withServerAddress("https://index.docker.io/v1/")
 				.withDockerCertPath(certPath.path)
 		configBuilder
 	}
