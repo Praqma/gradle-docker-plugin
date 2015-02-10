@@ -50,6 +50,7 @@ class DockerContainer extends DockerCompute {
 	String[] cmd
 
 	@Lazy Task createTask = createCreateTask()
+	@Lazy Task runTask = createRunTask()
 
 	int stopTimeoutSeconds = 5
 
@@ -292,7 +293,9 @@ class DockerContainer extends DockerCompute {
 	@CompileStatic(TypeCheckingMode.SKIP)
 	protected void createTasks() {
 		super.createTasks()
-		createTask // lazy created
+		// lazy created
+		createTask 
+		runTask
 	}
 
 	@CompileStatic(TypeCheckingMode.SKIP)
@@ -362,6 +365,19 @@ class DockerContainer extends DockerCompute {
 		createJobTask(taskName('Create'), ContainerJob.Create, this) {
 			description "Create ${computeDescription}"
 			dependsOn prepareTask }
+	}
+
+	@CompileDynamic
+	private Task createRunTask() {
+		project.tasks.create(taskName('Run')) {
+			group 'docker'
+			description "Run ${computeDescription} (i.e. start it and wait for it to finish)"
+			dependsOn startTask
+			
+			doLast {
+				waitUntilFinish()
+			}
+		}
 	}
 }
 
