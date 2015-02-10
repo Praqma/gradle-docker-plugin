@@ -2,6 +2,7 @@ package net.praqma.gradle.docker
 
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
+import net.praqma.gradle.docker.jobs.Job
 import net.praqma.gradle.docker.jobs.JobScheduler
 
 import org.gradle.api.Task
@@ -60,11 +61,12 @@ abstract class DockerCompute extends DockerDslObject {
 		actions.each { it() }
 	}
 
-	void startJob(JobScheduler scheduler) {
-		scheduler.newJob(descriptor.jobStartClass, this)
+	Job startJob(JobScheduler scheduler) {
+		Job j = scheduler.newJob(descriptor.jobStartClass, this)
+		j
 	}
 
-	void stopJob(JobScheduler scheduler) {
+	Job stopJob(JobScheduler scheduler) {
 		scheduler.newJob(descriptor.jobStopClass, this)
 	}
 

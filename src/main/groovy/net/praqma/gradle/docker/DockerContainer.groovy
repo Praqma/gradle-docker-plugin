@@ -33,6 +33,7 @@ import com.github.dockerjava.api.model.Volume
 class DockerContainer extends DockerCompute {
 
 	private String cid = '?' // null means no container id (i.e. no backing container). ? means state is unknown
+	private String imageId // Image id that backing container is base upon
 	private Map<EventName, List<Closure>> eventRegistry
 	private Collection<DockerPortBinding> portBindings = [] as Set
 	private Collection<String> volumes = [] as Set
@@ -154,7 +155,7 @@ class DockerContainer extends DockerCompute {
 	void create(String imageId) {
 		assert imageId != null
 
-		if (containerId == null) {
+		if (containerId == null || this.imageId != imageId) {
 			logger.info "Creating Docker container from ${imageId}"
 			CreateContainerCmd c = dockerClient.createContainerCmd(imageId)
 					.withName(fullName)
@@ -173,6 +174,7 @@ class DockerContainer extends DockerCompute {
 			}
 			this.@cid = resp.id
 			connection.updateCache(this, resp.id)
+			this.imageId = imageId
 		}
 		this.@cid
 	}

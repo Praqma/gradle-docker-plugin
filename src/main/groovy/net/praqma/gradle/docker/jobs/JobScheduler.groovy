@@ -31,6 +31,7 @@ class JobScheduler {
 			cache[key] = job
 			job.init(*args)
 		}
+		assert job != null
 		job
 	}
 

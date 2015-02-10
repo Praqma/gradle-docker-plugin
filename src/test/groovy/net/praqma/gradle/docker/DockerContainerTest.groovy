@@ -7,6 +7,7 @@ import net.praqma.gradle.docker.jobs.JobScheduler
 import net.praqma.gradle.docker.test.ProjectTestCase
 
 import org.gradle.api.Project
+import org.junit.Ignore
 import org.junit.Test
 
 class DockerContainerTest extends ProjectTestCase {
@@ -114,7 +115,7 @@ class DockerContainerTest extends ProjectTestCase {
 	void testLogs() {
 		DockerContainer c
 		projectWithDocker {
-			c = container('c') {
+			c = container('con') {
 				image BUSYBOX_IMAGE
 				cmd 'sh', '-c', "echo a"
 			}
@@ -174,5 +175,58 @@ class DockerContainerTest extends ProjectTestCase {
 
 		ExecutionResult result2 = c2.waitUntilFinish()
 		assertThat result2.exitCode, is(2)
+	}
+
+	@Test
+	@Ignore // Starting container with Job doesn't execute prepare task, hench dockerfile is not created. Fix it
+	void testStartingRunningContainer() {
+		DockerContainer c
+		
+		projectWithDocker {
+			image ('image') {
+				dockerFile {
+					fromImage BUSYBOX_IMAGE
+					run 'sh', '-c', 'date > /date'
+				}
+			}
+			c = container('con') {
+				localImage = 'image'
+				cmd 'sh', '-c', 'cat /date ; ls /etc/debian_version' // no such file on busybox
+			}
+		}
+		JobScheduler scheduler = new JobScheduler()
+		scheduler.launch(c.startJob(scheduler))
+		assertThat c.waitUntilFinish().exitCode, is(not(0))
+		String date1 = c.logStream().text
+		
+		projectWithDocker {
+			image ('image') {
+				dockerFile {
+					fromImage BUSYBOX_IMAGE
+					run 'sh', '-c', 'date > /date'
+				}
+			}
+			c = container('con') {
+				localImage = 'image'
+				cmd 'sh', '-c', 'cat /date ; ls /etc/debian_version' // no such file on busybox
+			}
+		}
+		scheduler = new JobScheduler()
+		scheduler.launch(c.startJob(scheduler))
+		assertThat c.waitUntilFinish().exitCode, is(1)
+		String date2 = c.logStream().text
+		
+		assertThat date1, is(date2)
+		
+
+		projectWithDocker {
+			c = container('con') {
+				image 'debian:wheezy'
+				cmd 'ls', '/date'
+			}
+		}
+		scheduler = new JobScheduler()
+		scheduler.launch(c.startJob(scheduler))
+		assertThat c.waitUntilFinish().exitCode, is(0)
 	}
 }
