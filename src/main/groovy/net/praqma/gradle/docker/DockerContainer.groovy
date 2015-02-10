@@ -331,7 +331,9 @@ class DockerContainer extends DockerCompute {
 
 	@CompileDynamic
 	private Task createCreateTask() {
-		createJobTask(taskName('Create'), ContainerJob.Create, this) { dependsOn prepareTask }
+		createJobTask(taskName('Create'), ContainerJob.Create, this) {
+			description "Create ${computeDescription}" 
+			dependsOn prepareTask }
 	}
 }
 

@@ -38,6 +38,9 @@ abstract class DockerCompute extends DockerDslObject {
 		prepareTask = project.tasks.create(name: "${taskNamePrefix}Prepare")
 	}
 
+	String getComputeDescription() {
+		"${descriptor.description(this)}"
+	}
 	abstract String getTaskNamePrefix()
 
 	void whenStarted(action) {
@@ -73,19 +76,19 @@ abstract class DockerCompute extends DockerDslObject {
 	@CompileDynamic
 	Task createStartTask() {
 		createJobTask("${taskNamePrefix}Start", descriptor.jobStartClass, this) {
-			description "Start '${name}'"
+			description "Start ${computeDescription}"
 			dependsOn prepareTask
 		}
 	}
 
 	@CompileDynamic
 	Task createStopTask() {
-		createJobTask("${taskNamePrefix}Stop", descriptor.jobStopClass, this) { description "Stop '${name}'" }
+		createJobTask("${taskNamePrefix}Stop", descriptor.jobStopClass, this) { description "Stop ${computeDescription}" }
 	}
 
 	@CompileDynamic
 	Task createDestroyTask() {
-		createJobTask("${taskNamePrefix}Destroy", descriptor.jobDestroyClass, this) { description "Destroy '${name}'" }
+		createJobTask("${taskNamePrefix}Destroy", descriptor.jobDestroyClass, this) { description "Destroy ${computeDescription}" }
 	}
 
 	protected void createTasks() {

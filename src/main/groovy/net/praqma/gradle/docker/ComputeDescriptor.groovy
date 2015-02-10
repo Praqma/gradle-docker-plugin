@@ -14,7 +14,12 @@ class ComputeDescriptor {
 	Class<Job> jobStartClass
 	Class<Job> jobStopClass
 	Class<Job> jobDestroyClass
-	
-	static final ComputeDescriptor appliance = new ComputeDescriptor(jobStartClass: ApplianceJob.Start, jobStopClass: ApplianceJob.Stop, jobDestroyClass: ApplianceJob.Destroy)
-	static final ComputeDescriptor container = new ComputeDescriptor(jobStartClass: ContainerJob.Start, jobStopClass: ContainerJob.Stop, jobDestroyClass: ContainerJob.Remove)
+	String typeText
+
+	static final ComputeDescriptor appliance = new ComputeDescriptor(jobStartClass: ApplianceJob.Start,	jobStopClass: ApplianceJob.Stop, jobDestroyClass: ApplianceJob.Destroy, typeText: 'appliance')
+	static final ComputeDescriptor container = new ComputeDescriptor(jobStartClass: ContainerJob.Start, jobStopClass: ContainerJob.Stop, jobDestroyClass: ContainerJob.Remove, typeText: 'container')
+
+	String description(DockerCompute compute) {
+		"${typeText} '${compute.name}'"
+	}
 }
