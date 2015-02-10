@@ -8,7 +8,7 @@ import groovy.transform.TypeCheckingMode
 import java.util.concurrent.CountDownLatch
 
 import net.praqma.docker.connection.EventName
-import net.praqma.gradle.docker.jobs.ContainerJob;
+import net.praqma.gradle.docker.jobs.ContainerJob
 
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -38,7 +38,7 @@ class DockerContainer extends DockerCompute {
 	private Collection<DockerPortBinding> portBindings = [] as Set
 	private Collection<String> volumes = [] as Set
 	private Collection<VolumeBind> volumeBinds = [] as Set
-	private Collection<String> volumesFrom = [] as Set
+	private Collection volumesFrom = [] as Set
 	private Collection<LinkInfo> links = [] as Set
 	private Map<String, String> env = [:]
 
@@ -113,7 +113,22 @@ class DockerContainer extends DockerCompute {
 	}
 
 	String getFullName() {
-		calculateFullName(name)
+		if (owner instanceof DockerAppliance) {
+			"${owner.name}${name.capitalize()}"
+		} else {
+			name
+		}
+	}
+
+	/**
+	 * @return name of underlying docker container
+	 */
+	String getDockerName() {
+		if (owner instanceof DockerAppliance) {
+			"${owner.name}_${name}"
+		} else {
+			name
+		}
 	}
 
 	void env(Map<String,String> m) {
@@ -128,20 +143,39 @@ class DockerContainer extends DockerCompute {
 		this.volumeBinds << new VolumeBind(hostPath, containerPath)
 	}
 
+	void volume(File hostPath, String containerPath) {
+		volume(hostPath.absolutePath, containerPath)
+	}
+
 	void volumesFrom(DockerContainer container) {
-		volumesFrom(container.name)
+		volumesFrom << container
 	}
 
 	void volumesFrom(String name) {
 		volumesFrom << name
 	}
 
+	Collection<DockerContainer> getVolumesFromContainers() {
+		volumesFrom.collect {
+			switch (it) {
+				case String:
+					this.owner.container(it as String)
+					break
+				case DockerContainer:
+					it
+					break
+				default:
+					throw new GradleException("Unexpect value: " + it)
+			}
+		}
+	}
+
 	void link(DockerContainer container, String alias = null) {
-		link(container.name, alias)
+		links << new LinkInfo(container, null, alias)
 	}
 
 	void link(String containerName, String alias = containerName) {
-		links << new LinkInfo(containerName, alias)
+		links << new LinkInfo(null, containerName, alias)
 	}
 
 	Project getProject() {
@@ -158,7 +192,7 @@ class DockerContainer extends DockerCompute {
 		if (containerId == null || this.imageId != imageId) {
 			logger.info "Creating Docker container from ${imageId}"
 			CreateContainerCmd c = dockerClient.createContainerCmd(imageId)
-					.withName(fullName)
+					.withName(dockerName)
 					.withVolumes(volumes.collect {
 						new Volume(it as String)
 					} as Volume[])
@@ -187,12 +221,12 @@ class DockerContainer extends DockerCompute {
 		}
 
 		StartContainerCmd cmd = dockerClient.startContainerCmd(containerId)
-				.withLinks(links.collect { LinkInfo li -> new Link(calculateFullName(li.name), li.alias) } as Link[])
+				.withLinks(links.collect { LinkInfo li -> li.asLink(this.owner) } as Link[])
 				.withPortBindings(ports)
 				.withBinds(volumeBinds.collect { VolumeBind vb -> new Bind(vb.hostPath, new Volume(vb.volume)) } as Bind[])
 		// TODO set more volumes
 		if (this.volumesFrom.size() > 0) {
-			cmd.withVolumesFrom(calculateFullName(volumesFrom.first()))
+			cmd.withVolumesFrom(volumesFromContainers.first().dockerName)
 		}
 		try {
 			cmd.exec()
@@ -211,7 +245,7 @@ class DockerContainer extends DockerCompute {
 	}
 
 	InputStream logStream(LogSpec logSpec) {
-		LogContainerCmd c = dockerClient.logContainerCmd(fullName)
+		LogContainerCmd c = dockerClient.logContainerCmd(dockerName)
 		logSpec.applyToCmd(c)
 		c.exec()
 	}
@@ -226,7 +260,7 @@ class DockerContainer extends DockerCompute {
 
 	def remove() {
 		try {
-			dockerClient.removeContainerCmd(fullName).exec()
+			dockerClient.removeContainerCmd(dockerName).exec()
 		} catch (NotFoundException e) {
 			// Ignore, container doesn't exist on host
 		}
@@ -249,17 +283,9 @@ class DockerContainer extends DockerCompute {
 
 	ContainerInspect inspect() {
 		try {
-			new ContainerInspect(fullName, dockerClient.inspectContainerCmd(fullName).exec())
+			new ContainerInspect(fullName, dockerClient.inspectContainerCmd(dockerName).exec())
 		} catch (NotFoundException e) {
 			return null
-		}
-	}
-
-	private String calculateFullName(String name) {
-		if (owner instanceof DockerAppliance) {
-			"${owner.name}${name.capitalize()}"
-		} else {
-			name
 		}
 	}
 
@@ -344,8 +370,14 @@ class DockerContainer extends DockerCompute {
 @Immutable
 @CompileStatic
 class LinkInfo {
+	DockerContainer container
 	String name
 	String alias
+
+	Link asLink(CompositeCompute owner) {
+		DockerContainer c = container ?: owner.container(name)
+		new Link(c.dockerName, alias)
+	}
 }
 
 @Immutable

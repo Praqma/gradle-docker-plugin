@@ -73,9 +73,8 @@ abstract class ContainerJob extends Job {
 				} else {
 					getImageIdJob = preJob(PullImageJob, container.image)
 				}
-				container.volumesFrom.each { String volumeFrom ->
-					DockerContainer volumeFromContainer = container.owner.container(volumeFrom)
-					preJob(Create, volumeFromContainer)
+				container.volumesFromContainers.each { DockerContainer con ->
+					preJob(Create, con)
 				}
 			}
 		}

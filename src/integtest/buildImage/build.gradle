@@ -19,7 +19,6 @@ docker {
 	
 	sum = container('sum') {
 		localImage = 'test'
-		withTasks = true
 		persistent = true 
 		// cmd to find all text files, and add the context. The sum is 8
 		cmd = ["sh", "-c", "cat \$(find /testdir -name '*.txt') | awk '{s+=\$1} END {print s}'"]
@@ -28,7 +27,6 @@ docker {
 	ls = container('ls') {
 		localImage = 'test'
 		cmd = ['ls', '-1', '/testdir']
-		withTasks = true
 		persistent = true
 	}
 
@@ -41,12 +39,12 @@ task removeContainers {
 	}
 }
 
-containerDockerPluginExtension_lsStart.dependsOn removeContainers
-containerDockerPluginExtension_sumStart.dependsOn removeContainers
+ls.startTask.dependsOn removeContainers
+sum.startTask.dependsOn removeContainers
 
 task validate {
-	dependsOn containerDockerPluginExtension_lsStart
-	dependsOn containerDockerPluginExtension_sumStart
+	dependsOn ls.startTask
+	dependsOn sum.startTask
 	
 	doLast {
 		sleep 1000 // Wait for containers to finish
