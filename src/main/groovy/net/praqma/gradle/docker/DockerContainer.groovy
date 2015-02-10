@@ -233,10 +233,12 @@ class DockerContainer extends DockerCompute {
 	}
 
 	def stop(int timeout = stopTimeoutSeconds) {
-		try {
-			dockerClient.stopContainerCmd(containerId).withTimeout(timeout).exec()
-		} catch (NotModifiedException e) {
-			// Container already stopped. Ignore.
+		if (containerId != null) {
+			try {
+				dockerClient.stopContainerCmd(containerId).withTimeout(timeout).exec()
+			} catch (NotModifiedException e) {
+				// Container already stopped. Ignore.
+			}
 		}
 	}
 
@@ -332,7 +334,7 @@ class DockerContainer extends DockerCompute {
 	@CompileDynamic
 	private Task createCreateTask() {
 		createJobTask(taskName('Create'), ContainerJob.Create, this) {
-			description "Create ${computeDescription}" 
+			description "Create ${computeDescription}"
 			dependsOn prepareTask }
 	}
 }
