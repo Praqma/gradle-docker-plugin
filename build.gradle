@@ -47,6 +47,8 @@ test {
 		!(f.name in ['bcprov-jdk15-1.46.jar', 'commons-io-1.4.jar', 'httpclient-4.2.2.jar', 'httpcore-4.2.2.jar'])
 	}
 	dependsOn testClasses
+
+    systemProperties(('net.praqma.boot2dockerBin'): System.properties['net.praqma.boot2dockerBin'])
 }
 
 publishing {

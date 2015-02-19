@@ -13,8 +13,9 @@ import org.gradle.api.GradleException
 @ToString
 class HostSpec {
 
-    static final String DOCKER_HOST_PROPERTY_NAME = 'dockerHost'
-    static final String DOCKER_CERT_PATH_PROPERTY_NAME = 'dockerCertPath'
+    static final String DOCKER_HOST_PROPERTY_NAME = 'net.praqma.dockerHost'
+    static final String DOCKER_CERT_PATH_PROPERTY_NAME = 'net.praqma.dockerCertPath'
+
     static final String DOCKER_HOST_ENVVAR_NAME = 'DOCKER_HOST'
     static final String DOCKER_CERT_PATH_ENVVAR_NAME = 'DOCKER_CERT_PATH'
 
@@ -35,9 +36,6 @@ class HostSpec {
 
 
     def uri(String s) {
-        if (s.startsWith('tcp://')) {
-            s = 'https' + s[3..-1]
-        }
         _uri = URI.create(s)
     }
 
@@ -70,10 +68,17 @@ class HostSpec {
         if (uri == null) {
             throw new GradleException("URI for docker host is null")
         }
+        if (uri.startsWith('tcp://')) {
+            String httpProtocol = 'http' + (certPath?.path ? 's' : '')
+            uri = httpProtocol + uri[3..-1]
+        }
+
         configBuilder
                 .withVersion(version)
                 .withUri(uri)
-                .withDockerCertPath(certPath?.path)
+        if (certPath?.path) {
+            configBuilder.withDockerCertPath(certPath?.path)
+        }
         //				.withUsername("dockeruser")
         //				.withPassword("ilovedocker")
         //				.withEmail("dockeruser@github.com")

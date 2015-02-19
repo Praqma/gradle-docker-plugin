@@ -9,19 +9,21 @@ import org.slf4j.Logger
 class Boot2DockerDiscoverer implements DockerHostDiscoverer {
 
     private Logger logger
+    private String boot2dockerBin
 
-    Boot2DockerDiscoverer(Logger logger) {
+    Boot2DockerDiscoverer(Logger logger, boot2dockerBin = null) {
         this.logger = logger
+        this.boot2dockerBin = boot2dockerBin ?: System.properties['net.praqma.boot2dockerBin'] ?: 'boot2docker'
     }
 
     @Override
     Map<String, String> discover() {
-        ProcessBuilder pb = new ProcessBuilder('boot2docker', 'shellinit')
+        ProcessBuilder pb = new ProcessBuilder(boot2dockerBin, 'shellinit')
         Process p
         try {
             p = pb.start()
         } catch (IOException e) {
-            logger.warn "boot2docker executable not found"
+            logger.warn "boot2docker executable not found: ${boot2dockerBin}"
             return null
         }
         p.waitFor()
