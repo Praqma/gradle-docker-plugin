@@ -1,7 +1,6 @@
 package net.praqma.gradle.docker.jobs
 
 import groovy.transform.CompileStatic
-import net.praqma.docker.connection.ContainerInfo
 import net.praqma.gradle.docker.DockerContainer
 import net.praqma.gradle.docker.LinkInfo
 import net.praqma.gradle.docker.LocalDockerImage

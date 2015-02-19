@@ -166,7 +166,7 @@ class DockerContainer extends DockerCompute {
 					it
 					break
 				default:
-					throw new GradleException("Unexpect value: " + it)
+					throw new GradleException("Unexpected value: ${it}")
 			}
 		}
 	}

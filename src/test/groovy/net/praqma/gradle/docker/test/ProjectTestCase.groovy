@@ -44,7 +44,10 @@ class ProjectTestCase {
 
 	Project projectWithDocker(Closure c) {
 		Project project = newRootProject()
-		project.with { docker.with(c) }
+		project.with {
+            docker.with(c)
+            docker.startDockerConnection()
+        }
 		project
 	}
 

@@ -1,93 +1,106 @@
 package net.praqma.docker.connection
 
-import groovy.transform.CompileStatic
-import groovy.transform.CompileDynamic
-import groovy.transform.ToString
-
-import org.gradle.api.GradleException
-import org.gradle.api.Project
-
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.core.DockerClientBuilder
 import com.github.dockerjava.core.DockerClientConfig
 import com.github.dockerjava.core.DockerClientConfig.DockerClientConfigBuilder
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
+import groovy.transform.ToString
+import org.gradle.api.GradleException
 
 @CompileStatic
 @ToString
 class HostSpec {
 
-	private URI _uri
-	private File _certPath
+    static final String DOCKER_HOST_PROPERTY_NAME = 'dockerHost'
+    static final String DOCKER_CERT_PATH_PROPERTY_NAME = 'dockerCertPath'
+    static final String DOCKER_HOST_ENVVAR_NAME = 'DOCKER_HOST'
+    static final String DOCKER_CERT_PATH_ENVVAR_NAME = 'DOCKER_CERT_PATH'
 
-	String version = '1.16'
+    private URI _uri
+    private File _certPath
 
-	def uri(String s) {
-		_uri = URI.create(s)
-	}
+    List<DockerHostDiscoverer> discoveres = []
 
-	def certPath(File certPath) {
-		this._certPath = certPath
-	}
+    /**
+     * If true and uri is not set the system will try to discover the settings for the Docker host automatically
+     */
+    boolean autoDiscover = true
 
-	def getScheme() {
-		uri.scheme
-	}
+    /**
+     * Version of Docker REST api to use
+     */
+    String version = '1.16'
 
-	def getHost() {
-		uri.host
-	}
 
-	def getPort() {
-		uri.port
-	}
+    def uri(String s) {
+        if (s.startsWith('tcp://')) {
+            s = 'https' + s[3..-1]
+        }
+        _uri = URI.create(s)
+    }
 
-	URI getUri() {
-		if (this._uri == null) {
-			String s = System.getenv('DOCKER_HOST')
-			if (s == null) return null
-			if (s.startsWith('tcp://')) {
-				s = 'https' + s[3..-1]
-			}
-			uri(s)
-		}
-		this._uri
-	}
+    def certPath(File certPath) {
+        this._certPath = certPath
+    }
 
-	File getCertPath() {
-		if (this._certPath == null) {
-			String s = System.getenv('DOCKER_CERT_PATH')
-			this._certPath = s ? new File(s) : null
-		}
-		this._certPath
-	}
+    def getScheme() {
+        uri.scheme
+    }
 
-	void addToClientConfigBuilder(DockerClientConfigBuilder configBuilder) {
-		String uri = uri as String
-		if (uri == null) {
-			throw new GradleException("URI for docker host is null")
-		}
-		configBuilder
-				.withVersion(version)
-				.withUri(uri)
-				//				.withUsername("dockeruser")
-				//				.withPassword("ilovedocker")
-				//				.withEmail("dockeruser@github.com")
-				//.withServerAddress("https://index.docker.io/v1/")
-				.withDockerCertPath(certPath.path)
-		configBuilder
-	}
+    def getHost() {
+        uri.host
+    }
 
-	@CompileDynamic
-	void initFromProjectProperties(Map<String,String> properies) {
-		properties.dockerCertPath?.with {
-			this._certPath = new File(it)
-		}
-		properties.dockerHost?.with { uri(it) }
-	}
+    def getPort() {
+        uri.port
+    }
 
-	DockerClient createClient() {
-		DockerClientConfigBuilder configBuilder = DockerClientConfig.createDefaultConfigBuilder()
-		addToClientConfigBuilder(configBuilder)
-		DockerClientBuilder.getInstance(configBuilder.build()).build()
-	}
+    URI getUri() {
+        this._uri
+    }
+
+    File getCertPath() {
+        this._certPath
+    }
+
+    void addToClientConfigBuilder(DockerClientConfigBuilder configBuilder) {
+        String uri = uri as String
+        if (uri == null) {
+            throw new GradleException("URI for docker host is null")
+        }
+        configBuilder
+                .withVersion(version)
+                .withUri(uri)
+                .withDockerCertPath(certPath?.path)
+        //				.withUsername("dockeruser")
+        //				.withPassword("ilovedocker")
+        //				.withEmail("dockeruser@github.com")
+        //.withServerAddress("https://index.docker.io/v1/")
+        configBuilder
+    }
+
+    @CompileDynamic
+    void initFromProjectProperties(Map<String, String> m) {
+        (m[DOCKER_HOST_PROPERTY_NAME] ?: m[DOCKER_HOST_ENVVAR_NAME]).with { uri(it) }
+        (m[DOCKER_CERT_PATH_PROPERTY_NAME] ?: m[DOCKER_CERT_PATH_ENVVAR_NAME])?.with { this._certPath = new File(it) }
+    }
+
+    DockerClient createClient() {
+        DockerClientConfigBuilder configBuilder = DockerClientConfig.createDefaultConfigBuilder()
+        addToClientConfigBuilder(configBuilder)
+        DockerClientBuilder.getInstance(configBuilder.build()).build()
+    }
+
+    void discover() {
+        Map<String, String> props = discoveres.findResult { it.discover() }
+        if (props) {
+            initFromProjectProperties(props)
+        }
+        if (uri == null) {
+            throw new GradleException("Unable to discover a Docker host")
+        }
+    }
+
 }

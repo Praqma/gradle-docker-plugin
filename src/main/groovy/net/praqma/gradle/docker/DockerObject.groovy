@@ -50,7 +50,6 @@ abstract class DockerObject {
 	@CompileStatic(TypeCheckingMode.SKIP)
 	Task createJobTask(String name, Class<? extends Job> jobCls, Object ...arguments) {
 		Closure configBlock = null
-		// TODO look into: It seems project.tasks.create(name, JobBasedTask) return null?!?
 		Task task = project.tasks.create(name: name, type: JobBasedTask) {
 			if (arguments.size() > 0 && arguments[-1] instanceof Closure) {
 				configBlock = arguments[-1]
