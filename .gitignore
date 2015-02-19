@@ -8,3 +8,5 @@ gradle.properties
 buildSrc/build
 buildSrc/bin
 .groovy
+.idea
+gradle-docker-plugin.iml
