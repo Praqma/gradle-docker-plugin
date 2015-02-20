@@ -1,4 +1,7 @@
-package net.praqma.gradle.docker.jobs;
+package net.praqma.gradle.docker.jobs
+
+import net.praqma.gradle.docker.State
+import org.junit.Assert;
 
 import static org.junit.Assert.*
 import net.praqma.gradle.docker.DockerAppliance
@@ -25,9 +28,12 @@ class ApplianceJobTest extends ProjectTestCase {
 			}
 		}
 		JobScheduler.execute(ApplianceJob.Start, app)
-		// TODO assert the two containers are running
+        Assert.assertEquals(app.container('c1').inspect().state, State.RUNNING)
+        Assert.assertEquals(app.container('c2').inspect().state, State.RUNNING)
+
 		JobScheduler.execute(ApplianceJob.Destroy, app)
-		// TODO assert the two containers are destroyed
+        Assert.assertNull(app.container('c1').inspect())
+        Assert.assertNull(app.container('c2').inspect())
 	}
 	
 	@Test
