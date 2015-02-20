@@ -28,15 +28,7 @@ class GradleExecutionHelper {
 		this.classpathDir = new File(project.buildDir, 'tmp/execClasspath')
 		prepareGradleExecutionTask = project.tasks.create(name: 'prepareGradleExecution', type: Sync) {
 			into classpathDir
-			from(project.configurations.runtime) { exclude 'bcprov-jdk15-1.46.jar', 'commons-io-1.4.jar' }
-			from project.jar
-		}
-	}
-
-	void createPrepareTask() {
-		project.tasks.create(name: 'prepareGradleExecution', type: Sync) {
-			into "${project.buildDir}/tmp/gradleExecClasspath"
-			from(project.configurations.runtime) { exclude 'bcprov-jdk15-1.46.jar', 'commons-io-1.4.jar' }
+			from(project.configurations.runtime) { exclude 'bcprov-jdk15-1.46.jar', 'commons-io-1.4.jar', 'httpclient-4.2.2.jar', 'httpcore-4.2.2.jar' }
 			from project.jar
 		}
 	}

@@ -72,7 +72,6 @@ class HostConnection implements EventCallback {
         this.hostSpec = hostSpec
         this.logger = logger
         assert this.executorService == null
-        this.executorService = dockerClient.eventsCmd(this).exec()
     }
 
 
@@ -88,6 +87,9 @@ class HostConnection implements EventCallback {
         DockerClientConfigBuilder configBuilder = DockerClientConfig.createDefaultConfigBuilder()
         hostSpec.addToClientConfigBuilder(configBuilder)
         DockerClient client = DockerClientBuilder.getInstance(configBuilder.build()).build()
+        if (executorService == null) {
+            executorService = client.eventsCmd(this).exec()
+        }
         client
     }
 
@@ -99,11 +101,6 @@ class HostConnection implements EventCallback {
 
     /** container id => (event => List<Action>) */
     Map<String, Map<?, List>> eventHandlers = [:].withDefault {}
-
-    void stop() {
-        executorService.shutdown()
-        log "Stop"
-    }
 
     void register(DockerContainer container, EventName eventName, Closure closure) {
         eventHandlers[container.containerId][eventName] << closure
@@ -127,7 +124,7 @@ class HostConnection implements EventCallback {
     void onCompletion(int numEvents) {
     }
 
-    // @Override part of docker-java:0.10.5 api
+    @Override
     boolean isReceiving() { true }
 
     private log(msg) {
