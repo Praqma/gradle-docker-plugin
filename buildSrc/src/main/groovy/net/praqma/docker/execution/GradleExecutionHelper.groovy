@@ -10,53 +10,53 @@ import org.gradle.tooling.ProjectConnection
 
 
 class GradleExecutionHelper {
-	
-	private Project project
-	
-	private String taskNamePrefix
 
-	private prepareGradleExecutionTask
+    private Project project
 
-	private File buildGradleTop
+    private String taskNamePrefix
 
-	private File classpathDir
+    private prepareGradleExecutionTask
 
-	GradleExecutionHelper(Project project, String taskNamePrefix) {
-		this.project = project
-		this.taskNamePrefix = taskNamePrefix
-		this.buildGradleTop = project.file("${project.buildDir}/tmp/gradleExecTop.txt")
-		this.classpathDir = new File(project.buildDir, 'tmp/execClasspath')
-		prepareGradleExecutionTask = project.tasks.create(name: 'prepareGradleExecution', type: Sync) {
-			into classpathDir
-			from(project.configurations.runtime) { exclude 'bcprov-jdk15-1.46.jar', 'commons-io-1.4.jar', 'httpclient-4.2.2.jar', 'httpcore-4.2.2.jar' }
-			from project.jar
-		}
-	}
+    private File buildGradleTop
 
-	Task createTask(String name, File dir, String taskName, String taskGroup = null) {
-		File dest = new File(project.buildDir, "gradleExec/${name}")
-		Task t = project.tasks.create(name: "syncGradleExecuteDir${name.capitalize()}", type: Sync, dependsOn: prepareGradleExecutionTask) {
-			into dest
+    private File classpathDir
 
-			from (dir) { exclude 'build.gradle' }
-			from (dir) {
-				include 'build.gradle'
-				filter (ConcatFilter, prepend: buildGradleTop)
-			}
-			doFirst {
-				assert dir.exists()
-				buildGradleTop.text = "buildscript { dependencies { classpath fileTree(dir: '${classpathDir.path}') } }\n\n"
-			}
-		}
-		project.tasks.create(name: "${taskNamePrefix}${name.capitalize()}", dependsOn: t) {
-			if (taskGroup) group = taskGroup
-			doLast { executeGradle(dest, taskName, '-s') }
-		}
-	}
+    GradleExecutionHelper(Project project, Collection<File> classpath, String taskNamePrefix) {
+        this.project = project
+        this.taskNamePrefix = taskNamePrefix
+        this.buildGradleTop = project.file("${project.buildDir}/tmp/gradleExecTop.txt")
+        this.classpathDir = new File(project.buildDir, 'tmp/execClasspath')
+        prepareGradleExecutionTask = project.tasks.create(name: 'prepareGradleExecution', type: Sync) {
+            into classpathDir
+            from classpath
+            from project.jar
+        }
+    }
 
-	private void executeGradle(File dir, String taskName, String ...args) {
-		ProjectConnection connection = GradleConnector.newConnector().forProjectDirectory(dir).connect()
-		BuildLauncher buildLauncher = connection.newBuild().withArguments(args).forTasks(taskName)
-		buildLauncher.run()
-	}
+    Task createTask(String name, File dir, String taskName, String taskGroup = null) {
+        File dest = new File(project.buildDir, "gradleExec/${name}")
+        Task t = project.tasks.create(name: "syncGradleExecuteDir${name.capitalize()}", type: Sync, dependsOn: prepareGradleExecutionTask) {
+            into dest
+
+            from(dir) { exclude 'build.gradle' }
+            from(dir) {
+                include 'build.gradle'
+                filter(ConcatFilter, prepend: buildGradleTop)
+            }
+            doFirst {
+                assert dir.exists()
+                buildGradleTop.text = "buildscript { dependencies { classpath fileTree(dir: '${classpathDir.path}') } }\n\n"
+            }
+        }
+        project.tasks.create(name: "${taskNamePrefix}${name.capitalize()}", dependsOn: t) {
+            if (taskGroup) group = taskGroup
+            doLast { executeGradle(dest, taskName, '-s') }
+        }
+    }
+
+    private void executeGradle(File dir, String taskName, String... args) {
+        ProjectConnection connection = GradleConnector.newConnector().forProjectDirectory(dir).connect()
+        BuildLauncher buildLauncher = connection.newBuild().withArguments(args).forTasks(taskName)
+        buildLauncher.run()
+    }
 }
