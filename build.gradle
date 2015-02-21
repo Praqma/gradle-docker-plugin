@@ -1,6 +1,7 @@
 plugins { id 'com.jfrog.bintray' version '1.1' }
 
 apply plugin: 'eclipse'
+apply plugin: 'idea'
 apply plugin: 'groovy'
 apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
@@ -22,7 +23,19 @@ ext {
 }
 
 dependencies {
-    compile gradleApi()
+    // compile gradleApi()
+    // Workaround for https://issues.gradle.org/browse/GRADLE-2516
+    // Get as much as possible with normal dependencies
+    def gradleJars = ['gradle-', 'jarjar-']
+    compile files(gradleApi().resolve().findAll { File f ->
+        gradleJars.any { String jarPrefix -> f.name.startsWith(jarPrefix) }
+    })
+    // println gradleApi().resolve()*.name.sort().join("\n")
+    compile 'org.apache.ant:ant:1.9.4'
+    compile 'net.rubygrapefruit:native-platform:0.10'
+    compile 'com.jcraft:jsch:0.1.51'
+    compile 'org.apache.ivy:ivy:2.4.0'
+
     //compile localGroovy()
     compile "org.codehaus.groovy:groovy-all:${GroovySystem.version}"
 
@@ -41,15 +54,7 @@ task sourceJar(type: Jar) {
 }
 
 
-// When executing test some jars are provided both by gradleApi() and java-docker. Remove gradle
-// versions from classpath
-def classpathFilter = { File f ->
-    !(f.name in ['bcprov-jdk15-1.46.jar', 'commons-io-1.4.jar',
-                 'httpclient-4.2.2.jar', 'httpcore-4.2.2.jar'])
-}
 test {
-    classpath = classpath.filter classpathFilter
-
     dependsOn testClasses
 
     systemProperties(('net.praqma.boot2dockerBin'): System.properties['net.praqma.boot2dockerBin'])
@@ -100,7 +105,7 @@ task allIntegTests {
     group 'verify'
 }
 
-def geh = new net.praqma.docker.execution.GradleExecutionHelper(project, configurations.runtime.findAll(classpathFilter), 'integTest')
+def geh = new net.praqma.docker.execution.GradleExecutionHelper(project, configurations.runtime as Collection, 'integTest')
 file('src/integtest').eachFile { File d ->
     def test = geh.createTask(d.name, d, 'validate', 'Docker Plugin Integration Test')
     allIntegTests.dependsOn test

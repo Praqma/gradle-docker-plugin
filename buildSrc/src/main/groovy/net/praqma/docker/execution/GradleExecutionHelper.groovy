@@ -55,8 +55,12 @@ class GradleExecutionHelper {
     }
 
     private void executeGradle(File dir, String taskName, String... args) {
+
         ProjectConnection connection = GradleConnector.newConnector().forProjectDirectory(dir).connect()
-        BuildLauncher buildLauncher = connection.newBuild().withArguments(args).forTasks(taskName)
+        BuildLauncher buildLauncher = connection.newBuild().
+                setStandardOutput(System.out).setStandardError(System.err).
+                //setColorOutput(true). valid from Gradle 2.3
+                withArguments(args).forTasks(taskName)
         buildLauncher.run()
     }
 }
