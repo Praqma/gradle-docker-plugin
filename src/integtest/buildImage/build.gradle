@@ -47,15 +47,15 @@ task validate {
 	dependsOn sum.startTask
 	
 	doLast {
-		sleep 1000 // Wait for containers to finish
-		
+	    ls.waitUntilFinish()
+        sum.waitUntilFinish()
+
 		assert sum.logStream().text.trim() == '8'
-		// TODO seems logStream() as extra character
-		//assert ls.logStream().readLines() == ['a.txt', 'b.txt', 'createZip' ]
+		assert ls.logStream().readLines() == ['a.txt', 'b.txt', 'createZip' ]
 	}
 	
 	doLast{
 		sum.remove()
-		//ls.remove()
+		ls.remove()
 	}
 }
