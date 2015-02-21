@@ -13,3 +13,4 @@ gradle-docker-plugin.iml
 gradle-docker-plugin.ipr
 gradle-docker-plugin.iws
 buildSrc/buildSrc.iml
+out
