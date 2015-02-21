@@ -14,8 +14,7 @@ class DockerEventTest extends ProjectTestCase{
 		DockerContainer c
 		def events = []
 		projectWithDocker {
-			String name = newName('con')
-			c = container (name) {
+			c = container ('con') {
 				image 'busybox:latest'
 				cmd 'sleep', '0.001'
 				

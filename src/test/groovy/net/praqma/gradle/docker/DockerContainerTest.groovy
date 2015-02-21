@@ -17,9 +17,8 @@ class DockerContainerTest extends ProjectTestCase {
 
     @Test
     void testInspectState() {
-        String conName = newName('con')
         Project project = projectWithDocker {
-            container(conName) {
+            container('con') {
                 persistent = true
                 image BUSYBOX_IMAGE
                 cmd 'sleep', '1000000'
@@ -27,7 +26,7 @@ class DockerContainerTest extends ProjectTestCase {
         }
 
         DockerPluginExtension d = project.docker
-        DockerContainer con = d.container(conName)
+        DockerContainer con = d.container('con')
         ContainerInspect ci = con.inspect()
         assertThat ci, is(null)
 
@@ -51,11 +50,10 @@ class DockerContainerTest extends ProjectTestCase {
 
     @Test
     void testPersistentFlag() {
-        String trueName = newName 'true'
-        String falseName = newName 'false'
-        String appName = newName 'app'
+        String trueName = 'true'
+        String falseName = 'false'
         Project project = projectWithDocker {
-            appliance(appName) {
+            appliance('app') {
                 container(trueName) {
                     image BUSYBOX_IMAGE
                     cmd 'sleep', '10000'
@@ -68,7 +66,7 @@ class DockerContainerTest extends ProjectTestCase {
             }
         }
 
-        DockerAppliance a = project.docker.appliance appName
+        DockerAppliance a = project.docker.appliance 'app'
 
         DockerContainer t = a.container(trueName)
         DockerContainer f = a.container(falseName)
@@ -83,6 +81,8 @@ class DockerContainerTest extends ProjectTestCase {
         JobScheduler.execute(ApplianceJob.Stop, a)
         assertThat t.inspect().state, is(State.STOPPED)
         assertThat f.inspect(), is(null)
+
+        remove t
     }
 
     @Test
@@ -92,16 +92,23 @@ class DockerContainerTest extends ProjectTestCase {
             w = container('writer') {
                 image BUSYBOX_IMAGE
                 volume '/tmp', '/hosttmp'
-                cmd 'touch', '/hosttmp/x'
+                cmd 'sh', '-c', 'echo foo > /hosttmp/xyz'
             }
             r = container('reader') {
                 image BUSYBOX_IMAGE
                 volume '/tmp', '/hosttmp2'
-                cmd 'touch', '/hosttmp2/y'
+                cmd 'sh', '-c', 'cat /hosttmp2/xyz'
             }
         }
         start w
+        w.waitUntilFinish()
         start r
+        r.waitUntilFinish()
+
+        assertThat r.logStream().text.trim(), is('foo')
+
+        remove w
+        remove r
     }
 
     @Test
