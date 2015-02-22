@@ -59,8 +59,10 @@ class ProjectTestCase {
         JobScheduler.execute(ContainerJob.Stop, c)
     }
 
-    void remove(DockerContainer c) {
-        JobScheduler.execute(ContainerJob.Remove, c)
+    void remove(DockerContainer ...containers) {
+        containers.each { DockerContainer c ->
+            JobScheduler.execute(ContainerJob.Remove, c)
+        }
     }
 
     void start(DockerAppliance app) {

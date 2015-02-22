@@ -153,6 +153,8 @@ class DockerContainerTest extends ProjectTestCase {
 
         assertThat flag1, is(true)
         assertThat flag2, is(true)
+
+        remove c1, c2
     }
 
     @Test
@@ -175,6 +177,8 @@ class DockerContainerTest extends ProjectTestCase {
 
         ExecutionResult result2 = c2.waitUntilFinish()
         assertThat result2.exitCode, is(2)
+
+        remove c1, c2
     }
 
     @Test
