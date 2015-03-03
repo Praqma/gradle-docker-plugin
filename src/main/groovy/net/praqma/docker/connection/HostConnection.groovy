@@ -9,6 +9,7 @@ import com.github.dockerjava.api.model.Event
 import com.github.dockerjava.core.DockerClientBuilder
 import com.github.dockerjava.core.DockerClientConfig
 import com.github.dockerjava.core.DockerClientConfig.DockerClientConfigBuilder
+import com.github.dockerjava.jaxrs.DockerCmdExecFactoryImpl
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import groovy.transform.CompileStatic
@@ -88,7 +89,11 @@ class HostConnection implements EventCallback {
         DockerClientConfigBuilder configBuilder = DockerClientConfig.createDefaultConfigBuilder()
         hostSpec.addToClientConfigBuilder(configBuilder)
         DockerClientConfig config = configBuilder.build()
-        DockerClient client = DockerClientBuilder.getInstance(config).build()
+        // If DockerCmdExeFactory isn't set, sometimes the ServiceLoader fails to find a DockerCmdExeFactory
+        // The behavior seems rather non-determistic and has only been observed using the plugin (i.e. not
+        // in integration test).
+        DockerClient client = DockerClientBuilder.getInstance(config)
+                .withDockerCmdExecFactory(new DockerCmdExecFactoryImpl()).build()
         if (executorService == null) {
             executorService = client.eventsCmd(this).exec()
         }
