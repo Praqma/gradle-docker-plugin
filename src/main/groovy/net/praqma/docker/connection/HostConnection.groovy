@@ -4,6 +4,7 @@ import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.NotFoundException
 import com.github.dockerjava.api.command.EventCallback
 import com.github.dockerjava.api.command.InspectContainerResponse
+import com.github.dockerjava.api.model.Container
 import com.github.dockerjava.api.model.Event
 import com.github.dockerjava.core.DockerClientBuilder
 import com.github.dockerjava.core.DockerClientConfig
@@ -86,11 +87,18 @@ class HostConnection implements EventCallback {
         assert hostSpec != null
         DockerClientConfigBuilder configBuilder = DockerClientConfig.createDefaultConfigBuilder()
         hostSpec.addToClientConfigBuilder(configBuilder)
-        DockerClient client = DockerClientBuilder.getInstance(configBuilder.build()).build()
+        DockerClientConfig config = configBuilder.build()
+        DockerClient client = DockerClientBuilder.getInstance(config).build()
         if (executorService == null) {
             executorService = client.eventsCmd(this).exec()
         }
         client
+    }
+
+    Collection<ContainerInfo> ps(boolean all = false) {
+        dockerClient.listContainersCmd().withShowAll(all).exec().collect { Container con ->
+            ContainerInfo.from(con)
+        }
     }
 
     ///////////
@@ -137,5 +145,10 @@ class HostConnection implements EventCallback {
 @CompileStatic
 class ContainerInfo {
     String id
+    String[] names
     String imageId
+
+    static from(Container con) {
+        new ContainerInfo(con.id, con.names, con.image)
+    }
 }
