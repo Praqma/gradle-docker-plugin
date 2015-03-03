@@ -7,7 +7,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
 
 repositories {
-    // mavenLocal()
+    //mavenLocal()
 	jcenter()  }
 
 targetCompatibility = sourceCompatibility = '1.7'
@@ -30,18 +30,18 @@ dependencies {
     compile files(gradleApi().resolve().findAll { File f ->
         gradleJars.any { String jarPrefix -> f.name.startsWith(jarPrefix) }
     })
-    // println gradleApi().resolve()*.name.sort().join("\n")
+    //println gradleApi().resolve()*.name.sort().join("\n")
     compile 'org.apache.ant:ant:1.9.4'
     compile 'net.rubygrapefruit:native-platform:0.10'
     compile 'com.jcraft:jsch:0.1.51'
     compile 'org.apache.ivy:ivy:2.4.0'
+    compile 'commons-collections:commons-collections:3.2.1'
 
     //compile localGroovy()
     compile "org.codehaus.groovy:groovy-all:${GroovySystem.version}"
 
-    compile 'com.github.docker-java:docker-java:0.10.5'
+    compile 'com.github.docker-java:docker-java:1.0.0'
 
-    testCompile 'com.google.guava:guava:18+'
     testCompile 'junit:junit:4.11'
     testCompile 'org.hamcrest:hamcrest-library:1.3'
     // testCompile 'org.spockframework:spock-core:0.7-groovy-2.0'
