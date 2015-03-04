@@ -29,12 +29,6 @@ class HostSpec {
      */
     boolean autoDiscover = true
 
-    /**
-     * Version of Docker REST api to use
-     */
-    String version = '1.16'
-
-
     def uri(String s) {
         _uri = URI.create(s)
     }
@@ -74,7 +68,7 @@ class HostSpec {
         }
 
         configBuilder
-                .withVersion(version)
+                .withVersion('1.15')
                 .withUri(uri)
         if (certPath?.path) {
             configBuilder.withDockerCertPath(certPath?.path)
