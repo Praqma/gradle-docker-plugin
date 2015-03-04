@@ -20,10 +20,6 @@ class ContainerInspect {
 		icr.config.exposedPorts as List
 	}
 
-	List<String> getVolumes() {
-		icr.volumes as List
-	}
-
 	State getState() {
 		def s = icr.state
 		if (s.paused) return State.PAUSED
@@ -35,10 +31,6 @@ class ContainerInspect {
 		icr.state.exitCode
 	}
 
-	@Immutable
-	static class Volume {
-
-	}
 }
 
 enum State {

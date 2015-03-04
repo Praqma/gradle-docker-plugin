@@ -113,7 +113,7 @@ class HostConnection implements EventCallback {
     private ExecutorService executorService
 
     /** container id => (event => List<Action>) */
-    Map<String, Map<?, List>> eventHandlers = [:].withDefault {}
+    Map<String, Map<EventName, List>> eventHandlers = [:].withDefault {}
 
     void register(DockerContainer container, EventName eventName, Closure closure) {
         eventHandlers[container.containerId][eventName] << closure
