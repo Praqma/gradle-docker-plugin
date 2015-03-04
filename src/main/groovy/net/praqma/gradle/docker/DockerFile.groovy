@@ -121,7 +121,7 @@ public class DockerFile {
 				case File:
 					File file = src as File
 					String s = file.absolutePath
-					srcString = copyToCtx(src, DigestUtils.sha1Hex(s))
+					srcString = copyToCtx(src, file.name)
 					break
 				case Task:
 					Task task = src as Task
@@ -131,9 +131,10 @@ public class DockerFile {
 				case GString:
 					srcString = src
 					break
-				case FileCollection:
+				case Iterable:
+                    // TODO implement
 				default:
-					throw new GradleException("Can't use ${src} as source for file")
+					throw new GradleException("Can't use ${src} as source for file (class: ${src.class})")
 					break
 			}
 			assert srcString != null
