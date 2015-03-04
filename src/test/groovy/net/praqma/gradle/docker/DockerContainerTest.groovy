@@ -112,6 +112,37 @@ class DockerContainerTest extends ProjectTestCase {
     }
 
     @Test
+    void testVolumeFrom() {
+        DockerContainer data, con, verifier
+        String rand = Random.newInstance().nextLong() as String
+        projectWithDocker {
+            data = container('data') {
+                image BUSYBOX_IMAGE
+                volume "/tmp/${owner.class.simpleName}", '/tmp/'
+                cmd 'true'
+            }
+            con = container ('con') {
+                image BUSYBOX_IMAGE
+                volumesFrom data
+                cmd 'touch', "/tmp/$rand"
+            }
+            verifier = container ('verifier') {
+                image BUSYBOX_IMAGE
+                volumesFrom data
+                cmd 'ls', "/tmp/$rand"
+            }
+        }
+
+        start data
+        data.waitUntilFinish()
+        start con
+        con.waitUntilFinish()
+        start verifier
+        int rc = verifier.waitUntilFinish().exitCode
+        assert rc == 0
+    }
+
+    @Test
     void testLogs() {
         DockerContainer c
         projectWithDocker {
