@@ -184,9 +184,8 @@ class DockerContainer extends DockerCompute {
             CreateContainerCmd c = dockerClient.createContainerCmd(imageId)
                     .withName(dockerName)
                     .withTty(true)
-                    .withVolumes(volumes.collect {
-                new Volume(it as String)
-            } as Volume[])
+                    // TODO Shouldn't it be possible to set VolumeBinds
+                    .withVolumes(volumes.collect { new Volume(it as String) } as Volume[])
                     .withEnv(map2StringArray(env))
             if (cmd != null) {
                 c.withCmd(cmd)
@@ -365,7 +364,10 @@ class DockerContainer extends DockerCompute {
             dependsOn startTask
 
             doLast {
-                waitUntilFinish()
+                ExecutionResult er = waitUntilFinish()
+                if (er.exitCode != 0) {
+                    throw new GradleException("Container exit code: ${er.exitCode}")
+                }
             }
         }
     }
