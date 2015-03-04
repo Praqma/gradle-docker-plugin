@@ -8,12 +8,13 @@ apply plugin: 'com.jfrog.bintray'
 
 repositories {
     //mavenLocal()
-	jcenter()  }
+    jcenter()
+}
 
 targetCompatibility = sourceCompatibility = '1.7'
 
 group = 'net.praqma.gradle'
-version = '0.7-SNAPSHOT'
+version = '0.7'
 description = 'Gradle plugin to orchestrate Docker containers'
 
 ext {
