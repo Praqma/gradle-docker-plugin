@@ -58,7 +58,9 @@ task sourceJar(type: Jar) {
 test {
     dependsOn testClasses
 
-    systemProperties(('net.praqma.boot2dockerBin'): System.properties['net.praqma.boot2dockerBin'])
+    systemProperties(
+            'net.praqma.boot2dockerBin': System.properties['net.praqma.boot2dockerBin'],
+            'net.praqma.dockerHost': System.properties['net.praqma.dockerHost'])
 }
 
 publishing {
